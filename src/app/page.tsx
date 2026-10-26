@@ -10,7 +10,7 @@ import { ScrollScenes } from "@/components/space/ScrollScenes";
 import { Starfield } from "@/components/space/Starfield";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WaitlistForm } from "@/components/WaitlistForm";
-import { DESCRIPTION, FAQ, FEATURES, INGOT, NAV, ROUTINES, SECURITY, SITE_NAME, SITE_URL, STEPS, WHAT_IT_DOES } from "@/lib/site";
+import { DESCRIPTION, FAQ, FEATURES, INGOT, NAV, ROUTINES, SECURITY, SITE_NAME, SITE_URL, STEPS, WHAT_IT_DOES, ZAPREX_PLANS } from "@/lib/site";
 
 const JSON_LD = {
   "@context": "https://schema.org",
@@ -92,19 +92,19 @@ export default function Home() {
 
       <header className="glass-bar sticky top-0 z-40">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
-          <a href="#top" className="flex items-center gap-2.5" aria-label="Zaprex home">
+          <a href="#top" className="flex shrink-0 items-center gap-2.5" aria-label="Zaprex home">
             <ZaprexMascot id="nav" className="h-10 w-10 -my-1" decorative />
             <span className="font-display text-xl font-extrabold tracking-tight">Zaprex</span>
-            <span className="hidden text-[11px] font-semibold uppercase tracking-wider text-gold sm:inline">by Ingot</span>
+            <span className="hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-gold sm:inline">by Ingot</span>
           </a>
           <nav className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap text-sm font-medium text-muted xl:flex" aria-label="Sections">
             {NAV.map(item => <a key={item.href} href={item.href} className="transition hover:text-ink">{item.label}</a>)}
             <Link href="/docs" className="transition hover:text-ink" data-testid="nav-docs">Docs</Link>
           </nav>
-          <div className="ml-auto flex items-center gap-3 xl:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap xl:ml-0">
             <ThemeToggle />
             <AccountButton />
-            <a href="#early-access" className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 md:inline-flex">Early access</a>
+            <a href="#early-access" className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 md:inline-flex">Early access</a>
           </div>
         </div>
       </header>
@@ -129,7 +129,7 @@ export default function Home() {
                   Join early access <ArrowRight aria-hidden className="h-4 w-4" />
                 </a>
               </div>
-              <p className="mt-5 text-sm text-muted">Included in Ingot Pro+ and Ultra · Runs on Ingot, our own model</p>
+              <p className="mt-5 text-sm text-muted">Included in every paid Ingot plan, from $6 a month · Runs on Ingot, our own model</p>
             </div>
 
             <div className="relative mx-auto w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px]">
@@ -312,8 +312,17 @@ export default function Home() {
             <span aria-hidden className="planet planet-gold planet-ringed absolute -right-6 -top-16 h-40 w-40 opacity-90 md:-right-16 md:h-56 md:w-56" data-speed="0.5" />
             <div className="pricing-card relative overflow-hidden rounded-[2rem] p-10 text-center text-white sm:p-14" data-reveal>
               <p className="relative text-xs font-semibold uppercase tracking-[0.28em] text-gold">Pricing</p>
-              <h2 className="font-display relative mt-3 text-3xl font-bold sm:text-5xl">Included in Ingot Pro+ and Ultra</h2>
-              <p className="relative mx-auto mt-4 max-w-xl text-white/80">Zaprex comes with monthly run minutes on Pro+ and Ultra, alongside everything else in Ingot. No separate subscription.</p>
+              <h2 className="font-display relative mt-3 text-3xl font-bold sm:text-5xl">Included in every paid Ingot plan</h2>
+              <p className="relative mx-auto mt-4 max-w-xl text-white/80">Zaprex comes with monthly run minutes on every paid plan, alongside everything else in Ingot. No separate subscription.</p>
+              <ul className="relative mt-8 grid grid-cols-2 gap-3 text-left sm:grid-cols-4" data-testid="zaprex-plans">
+                {ZAPREX_PLANS.map(plan => (
+                  <li key={plan.name} className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+                    <p className="text-sm font-semibold text-gold">{plan.name}</p>
+                    <p className="mt-1 font-display text-2xl font-bold">${plan.price}<span className="text-xs font-medium text-white/70"> / {plan.per}</span></p>
+                    <p className="mt-1 text-xs text-white/75">{plan.minutes} Zaprex minutes a month{plan.perSeat ? " per seat" : ""}</p>
+                  </li>
+                ))}
+              </ul>
               <div className="relative mt-8 flex flex-wrap justify-center gap-3">
                 <a href={INGOT.pricing} data-testid="cta-pricing" className="inline-flex h-12 items-center gap-2 rounded-full bg-gold px-6 font-semibold text-navy transition hover:brightness-105">See Ingot plans <ArrowRight aria-hidden className="h-4 w-4" /></a>
                 <a href={INGOT.download} className="inline-flex h-12 items-center gap-2 rounded-full border border-white/30 px-6 font-semibold transition hover:bg-white/10"><Download aria-hidden className="h-4 w-4" /> Download Ingot</a>

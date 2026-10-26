@@ -31,7 +31,7 @@ export const STATUS_LABELS: Record<RunStatus, string> = {
 
 /** Server error codes, in plain words. */
 export const ERROR_TEXT: Record<string, string> = {
-  bot_upgrade_required: "Zaprex is part of Pro+ and Ultra.",
+  bot_upgrade_required: "Zaprex is part of every paid Ingot plan, from $6 a month.",
   bot_paused: "Zaprex is paused right now.",
   bot_limit_minutes: "You have used all Zaprex minutes for this month.",
   bot_limit_concurrent: "A run is already in progress. Wait for it to finish.",

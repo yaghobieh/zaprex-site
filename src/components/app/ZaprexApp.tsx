@@ -191,7 +191,7 @@ export function ZaprexApp() {
           {state.loaded && state.error && !state.entitlement && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
           {state.loaded && locked && (
             <div className="rounded-2xl border border-gold/40 bg-gold/10 p-5" data-testid="app-upsell">
-              <p className="font-semibold">{state.entitlement?.reason === "kill_switch" ? "Zaprex is paused by the Ingot team right now." : "Zaprex is part of Pro+ and Ultra."}</p>
+              <p className="font-semibold">{state.entitlement?.reason === "kill_switch" ? "Zaprex is paused by the Ingot team right now." : "Zaprex is part of every paid Ingot plan, from $6 a month."}</p>
               {state.entitlement?.reason !== "kill_switch" && <a href={INGOT.pricing} className="mt-3 inline-flex h-10 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy">See plans</a>}
             </div>
           )}
