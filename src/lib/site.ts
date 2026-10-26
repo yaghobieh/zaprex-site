@@ -15,6 +15,14 @@ export const INGOT = {
   github: "https://github.com/yaghobieh/ingot",
 } as const;
 
+/** Ingot plans that include Zaprex (IDEA-167). Must match ingot-server billing + bot plan limits. */
+export const ZAPREX_PLANS = [
+  { name: "Pro", price: 6, per: "month", minutes: "60", perSeat: false },
+  { name: "Pro+", price: 15, per: "month", minutes: "300", perSeat: false },
+  { name: "Ultra", price: 49, per: "month", minutes: "1,000", perSeat: false },
+  { name: "Team", price: 12, per: "seat", minutes: "300", perSeat: true }
+] as const;
+
 export const NAV = [
   { href: "#demo", label: "Demo" },
   { href: "#how", label: "How it works" },
@@ -71,7 +79,7 @@ export const FAQ = [
   { q: "Can it push to my main branch?", a: "No. Zaprex always works on a new branch and opens a draft pull request. You review and merge." },
   { q: "What counts as a risky action?", a: "Things like installing packages, running database migrations, deleting files in bulk or calling outside services. Zaprex pauses and shows an approval card first." },
   { q: "Where does my code run?", a: "In a fresh, isolated cloud machine created for that run and removed when it ends. Nothing runs on your computer." },
-  { q: "Which plans include it?", a: "Zaprex is part of the Ingot Pro+ and Ultra plans. See the Ingot pricing page for details." },
+  { q: "Which plans include it?", a: "Every paid Ingot plan: Pro ($6 a month, 60 Zaprex minutes), Pro+ ($15, 300 minutes), Ultra ($49, 1,000 minutes) and Team ($12 per seat, 300 minutes per seat). Free and BYOK plans see an upgrade prompt." },
   { q: "Do I need a separate Zaprex account?", a: "No. Zaprex uses your Ingot account: same sign-in, same plan, same data. Sign in on zaprex.dev or the Ingot portal and you're signed in with the same account." },
   { q: "How do I get it?", a: "Open zaprex.dev/app and sign in with your Ingot account. In the Ingot IDE, click the small Zaprex T-rex next to the agent. Join early access to hear first when new features land." },
 ] as const;

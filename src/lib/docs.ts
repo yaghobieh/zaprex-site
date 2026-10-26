@@ -1,6 +1,6 @@
 /**
  * Zaprex docs content. Facts come from the Zaprex design doc (ingot-server docs/ingot-bot.md, security baseline) and the
- * Zaprex repo README. Plan numbers are not published until approved ("coming soon").
+ * Zaprex repo README. Plan numbers follow the approved Ingot pricing (IDEA-167).
  */
 export type Doc = { slug: string; title: string; description: string; group: string; body: string };
 
@@ -82,7 +82,7 @@ Zaprex has **no separate account**. It uses your Ingot account: same sign-in, sa
 
 ## 2. Make sure your plan includes Zaprex
 
-Zaprex is part of the Ingot **Pro+** and **Ultra** plans. On other plans you see an upgrade prompt instead of the chat box. See [Plans and limits](/docs/plans-and-limits).
+Zaprex is part of every paid Ingot plan (**Pro**, **Pro+**, **Ultra** and **Team**). On Free and BYOK you see an upgrade prompt instead of the chat box. See [Plans and limits](/docs/plans-and-limits).
 
 ## 3. Open Zaprex
 
@@ -306,7 +306,7 @@ You can choose another model for a single task from the list your Ingot admin al
 
 ## Your own keys (BYOK)
 
-If your Ingot account uses your own provider keys, Zaprex runs still record tokens, but there is no Ingot model cost for them. Zaprex itself is part of Pro+ and Ultra.
+If your Ingot account uses your own provider keys, Zaprex runs still record tokens, but there is no Ingot model cost for them. Zaprex itself is part of every paid plan.
 
 ## For admins
 
@@ -317,9 +317,18 @@ Admins choose the default model, the fallbacks and which models users may pick, 
     slug: "plans-and-limits",
     group: "Models and plans",
     title: "Plans and limits",
-    description: "Zaprex is included in Ingot Pro+ and Ultra. Per-plan numbers are coming soon.",
+    description: "Zaprex is included in every paid Ingot plan. Minutes, concurrent runs and routines per plan.",
     body: `
-Zaprex is included in the Ingot **Pro+** and **Ultra** plans. There is no separate Zaprex subscription. Other plans see an upgrade prompt. See the [Ingot pricing page](https://ingot-portal.vercel.app/pricing).
+Zaprex is included in every paid Ingot plan. There is no separate Zaprex subscription. Free and BYOK plans see an upgrade prompt. Runs use **Ingot**, our own model, by default.
+
+| Plan | Price | Zaprex minutes a month | Runs at once | Routines | Longest run |
+| --- | --- | --- | --- | --- | --- |
+| Pro | $6 a month | 60 | 1 | 1 | 15 min |
+| Pro+ | $15 a month | 300 | 1 | 3 | 30 min |
+| Ultra | $49 a month | 1,000 | 2 | 10 | 60 min |
+| Team | $12 per seat a month | 300 per seat | 1 | 3 | 30 min |
+
+Yearly plans include about two months free. See the [Ingot pricing page](https://ingot-portal.vercel.app/pricing).
 
 ## What is limited
 
@@ -330,7 +339,7 @@ Each plan sets:
 - How many **routines** you can have.
 - The **maximum length** of one run (longer runs end as \`timed_out\`).
 
-> The exact numbers per plan are **coming soon**. They are still being finalised and will be published here and on the pricing page.
+> Your admin can change these numbers for your account. Your current usage is always on the Zaprex page.
 
 ## What is measured
 
@@ -443,7 +452,7 @@ Ingot, our own model built on Grok, by default. You can pick another allowed mod
 
 ## Which plans include it?
 
-Ingot Pro+ and Ultra. Per-plan numbers are coming soon. See [Plans and limits](/docs/plans-and-limits).
+Every paid Ingot plan: Pro, Pro+, Ultra and Team, from $6 a month. See [Plans and limits](/docs/plans-and-limits).
 
 ## What happens if I don't answer an approval?
 
@@ -470,7 +479,7 @@ GitHub. Others may come later.
     body: `
 ## I see an upgrade prompt instead of the chat box
 
-Your plan doesn't include Zaprex. It's part of Pro+ and Ultra. If you are on one of those, your admin may have turned Zaprex off for your account.
+Your plan doesn't include Zaprex. It's part of every paid plan (Pro, Pro+, Ultra and Team). If you are on one of those, your admin may have turned Zaprex off for your account.
 
 ## "Monthly minutes used up" (\`bot_limit_minutes\`)
 

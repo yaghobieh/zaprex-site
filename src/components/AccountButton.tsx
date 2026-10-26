@@ -37,7 +37,7 @@ export function AccountButton() {
 
   if (state.kind === "signed-out") {
     return (
-      <button type="button" onClick={() => startSignIn(window.location.pathname)} data-testid="sign-in" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm font-semibold transition hover:border-blue">
+      <button type="button" onClick={() => startSignIn(window.location.pathname)} data-testid="sign-in" className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-4 text-sm font-semibold transition hover:border-blue">
         <UserRound aria-hidden className="h-4 w-4" /> Sign in
       </button>
     );
