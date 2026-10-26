@@ -8,8 +8,6 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/mascot/zaprex-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/mascot/zaprex-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/mascot/zaprex-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-      { src: "/mascot/zaprex-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
