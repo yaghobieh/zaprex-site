@@ -70,5 +70,6 @@ export const FAQ = [
   { q: "What counts as a risky action?", a: "Things like installing packages, running database migrations, deleting files in bulk or calling outside services. Zaprex pauses and shows an approval card first." },
   { q: "Where does my code run?", a: "In a fresh, isolated cloud machine created for that run and removed when it ends. Nothing runs on your computer." },
   { q: "Which plans include it?", a: "Zaprex is part of the Ingot Pro+ and Ultra plans. See the Ingot pricing page for details." },
+  { q: "Do I need a separate Zaprex account?", a: "No. Zaprex uses your Ingot account: same sign-in, same plan, same data. Sign in on zaprex.dev or the Ingot portal and you're signed in with the same account." },
   { q: "How do I get it?", a: "Download Ingot, sign in, and open the Zaprex panel, or start a run from your Ingot dashboard on the web. Join early access to hear first when new features land." },
 ] as const;

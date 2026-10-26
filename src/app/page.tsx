@@ -1,5 +1,6 @@
 import { ArrowRight, Check, Download, GitPullRequestDraft, Hand, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { AccountButton } from "@/components/AccountButton";
 import { Icon } from "@/components/Icon";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WaitlistForm } from "@/components/WaitlistForm";
@@ -63,7 +64,8 @@ export default function Home() {
           </nav>
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
             <ThemeToggle />
-            <a href="#early-access" className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 sm:inline-flex">Early access</a>
+            <AccountButton />
+            <a href="#early-access" className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 md:inline-flex">Early access</a>
           </div>
         </div>
       </header>
