@@ -133,7 +133,6 @@ export default function Home() {
             </div>
 
             <div className="relative mx-auto w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px]">
-              <div aria-hidden className="hero-halo absolute inset-[-12%] rounded-full" />
               <div data-zx-slot data-zx-state="idle" className="relative aspect-square w-full">
                 <ZaprexMascot id="hero" className="zx-static mascot relative h-full w-full" title="Zaprex, an electric navy T-rex with glowing blue lightning and gold spikes" />
               </div>
@@ -354,7 +353,6 @@ export default function Home() {
         <section id="early-access" className="relative scroll-mt-20 pb-28 pt-16">
           <div className="mx-auto max-w-3xl px-5 text-center">
             <div className="relative mx-auto w-40 md:w-48">
-              <div aria-hidden className="hero-halo absolute inset-[-25%] rounded-full" />
               <div data-zx-slot data-zx-state="done" className="relative aspect-square w-full">
                 <ZaprexMascot id="landing" state="done" className="zx-static mascot h-full w-full" decorative />
               </div>
