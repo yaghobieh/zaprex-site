@@ -13,7 +13,7 @@ export const DOCS: Doc[] = [
     title: "What is Zaprex",
     description: "Ingot's background coding agent: it works on your repos while you're away and hands you draft pull requests.",
     body: `
-Zaprex is Ingot's personal background coding agent. It works on your repositories while you are away, runs scheduled routines (for example a nightly test-and-fix), opens **draft** pull requests, chats with you in the Ingot IDE and on the Ingot portal, notifies you when it needs you, remembers how you and your projects work, and always asks before risky actions.
+Zaprex is Ingot's personal background coding agent. It works on your repositories while you are away, runs scheduled routines (for example a nightly test-and-fix), opens **draft** pull requests, chats with you in its own app at [zaprex.dev/app](/app), notifies you when it needs you, remembers how you and your projects work, and always asks before risky actions.
 
 ## What it is good at
 
@@ -24,15 +24,50 @@ Zaprex is Ingot's personal background coding agent. It works on your repositorie
 
 ## How it works, in one paragraph
 
-You give Zaprex a task from the IDE panel or the portal chat (or a routine starts one). The Ingot server checks that your plan includes Zaprex, queues the run, and a worker starts a **fresh, isolated sandbox** for it. Zaprex reads, edits and runs your tests in that sandbox, streams every step to the run log, pauses for your approval before anything risky, and finishes by pushing a new branch and opening a draft pull request. The sandbox is destroyed when the run ends.
+You give Zaprex a task in the [Zaprex app](/docs/zaprex-app) (or a routine starts one). The Ingot server checks that your plan includes Zaprex, queues the run, and a worker starts a **fresh, isolated sandbox** for it. Zaprex reads, edits and runs your tests in that sandbox, streams every step to the run log, pauses for your approval before anything risky, and finishes by pushing a new branch and opening a draft pull request. The sandbox is destroyed when the run ends.
 
 ## Where you use it
 
-- **Ingot IDE**: the Zaprex panel (chat, runs list, approval cards).
-- **Ingot portal**: Dashboard, then Zaprex (Chat, Runs, Routines, Memory, Notifications).
-- **zaprex.dev**: product site and docs. Sign in here with your Ingot account.
+- **The Zaprex app** at [zaprex.dev/app](/app): chat, runs, run log and approval cards. Zaprex is its own app, separate from the Ingot IDE.
+- **From the Ingot IDE**: the small Zaprex T-rex next to the agent opens the Zaprex app in your browser. The IDE has no Zaprex panel of its own.
+- **Your Zaprex dashboard**: GitHub, routines, memory and notifications, on the Ingot portal.
+- **zaprex.dev**: product site and docs. Sign in with your Ingot account.
 
 > Zaprex is in beta. Some features below are marked as coming later; everything else is live.
+`,
+  },
+  {
+    slug: "zaprex-app",
+    group: "Get started",
+    title: "The Zaprex app",
+    description: "Zaprex is its own app at zaprex.dev/app. Ingot links to it from a small T-rex next to the agent.",
+    body: `
+Zaprex is a **separate app** from the Ingot IDE. You use it in the browser at [zaprex.dev/app](/app), on your desktop or your phone.
+
+## Zaprex and Ingot
+
+- **Ingot** is the open-source AI IDE. Its own agent works with you in the editor, live.
+- **Zaprex** is the background bot. It works on its own, in a cloud sandbox, while you do something else, and hands you a draft pull request.
+
+They share **one account** and one plan, but they are different apps. In the Ingot IDE, the small **Zaprex T-rex** next to the agent opens the Zaprex app in your browser. Hover it and it says **Open Zaprex**. There is no Zaprex panel inside the IDE.
+
+## Sign in
+
+Open [zaprex.dev/app](/app) and choose **Sign in with Ingot**. You sign in on the Ingot portal (email code, Google or GitHub) and come straight back to the app. If you are already signed in to Ingot it takes one click.
+
+## What's in the app
+
+- **Chat**: tell Zaprex what to do. Pick a repository first if you connected GitHub; each repository has its own conversation.
+- **Approval cards**: risky steps wait here for **Approve**, **Approve for this run** or **Reject**. See [Approvals and safety](/docs/approvals-and-safety).
+- **Runs**: every run with its status and minutes. Click one to read its [run log](/docs/run-log), use the stop button to cancel, or open its draft PR.
+- **Usage**: your Zaprex minutes this month and how many runs are going.
+- The T-rex at the top shows what Zaprex is doing: thinking, working, waiting for you, done or stopped.
+
+GitHub, routines, memory and notifications are in your **Zaprex dashboard** (linked from the app).
+
+## Light, dark or system
+
+Use the theme switch at the top of the page. Your choice is remembered on this device.
 `,
   },
   {
@@ -51,10 +86,10 @@ Zaprex is part of the Ingot **Pro+** and **Ultra** plans. On other plans you see
 
 ## 3. Open Zaprex
 
-- In the **Ingot IDE**, open the Zaprex panel.
-- On the **portal**, open Dashboard, then **Zaprex**.
+- Go to [zaprex.dev/app](/app) and sign in with your Ingot account.
+- In the **Ingot IDE**, click the small Zaprex T-rex next to the agent. It opens the same app in your browser.
 
-Both show the same conversation, so you can start a task in the IDE and follow it on your phone.
+Zaprex keeps one conversation per repository, so you can start a task at your desk and follow it on your phone.
 
 ## 4. Connect GitHub and pick a repository
 
@@ -83,7 +118,7 @@ A **task** is what you ask Zaprex to do. Each task starts a **run**: one attempt
 
 ## Where tasks come from
 
-- The chat in the Ingot IDE panel or on the portal (one conversation per repository, shared by both).
+- The chat in the [Zaprex app](/app) (one conversation per repository).
 - A routine, on its schedule.
 - A follow-up on an earlier run, for example "address the review comments".
 
@@ -104,7 +139,7 @@ A **task** is what you ask Zaprex to do. Each task starts a **run**: one attempt
 
 ## Cancel a run
 
-Use the stop button next to a running item in the IDE runs list, or cancel it from the portal. Cancelled runs keep their log.
+Use the stop button next to a running item in the **Runs** list of the Zaprex app. Cancelled runs keep their log.
 
 ## Follow-ups
 
@@ -156,7 +191,7 @@ The first routine template. Every night at the time you choose, Zaprex runs your
     title: "Approvals and safety",
     description: "Which steps ask first, what the buttons do, and why prompt injection can't skip them.",
     body: `
-Zaprex **asks before risky actions**. A risky step pauses the run, posts an approval card in the chat thread (IDE and portal) and notifies you.
+Zaprex **asks before risky actions**. A risky step pauses the run, posts an approval card in the chat thread of the Zaprex app and notifies you.
 
 ## What asks by default
 
@@ -197,7 +232,7 @@ The policy engine runs **outside the model**. Repository content and model outpu
     title: "Run log",
     description: "Every step of a run: status, commands, test output, diffs and the model used.",
     body: `
-Every run has a live **run log**. Open the **Runs** tab on the portal and select a run, or expand a run in the IDE runs list.
+Every run has a live **run log**. Click a run in the **Runs** list of the [Zaprex app](/app) to expand its log, or open the Runs tab in your Zaprex dashboard.
 
 ## What you see
 

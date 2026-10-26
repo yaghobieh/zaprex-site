@@ -33,7 +33,7 @@ export const WHAT_IT_DOES = [
 ] as const;
 
 export const STEPS = [
-  { n: "01", title: "Give it a task", body: "From the Ingot IDE or the web: “fix the failing auth tests” or “add pagination to /orders”. Or pick a routine and a time." },
+  { n: "01", title: "Give it a task", body: "In the Zaprex app: “fix the failing auth tests” or “add pagination to /orders”. Or pick a routine and a time." },
   { n: "02", title: "It works in its own cloud machine", body: "Each run gets a fresh, isolated machine with your repo. Zaprex reads, edits, runs your tests, and stops to ask before anything risky." },
   { n: "03", title: "Review the draft PR", body: "You get an in-app and email notification with a draft pull request. Keep it, ask for changes, or close it. It never pushes to main." },
 ] as const;
@@ -45,7 +45,7 @@ export const FEATURES = [
   { icon: "Hand", title: "Approval cards", body: "Installing packages, running migrations, network calls: risky steps pause and wait for your yes." },
   { icon: "Bell", title: "In-app and email alerts", body: "Know the moment a run needs you or a PR is ready, in Ingot and in your inbox." },
   { icon: "CalendarClock", title: "Routines", body: "Nightly test-and-fix, weekly dependency updates, Friday test coverage. Pause or run now anytime." },
-  { icon: "Monitor", title: "IDE or web", body: "Start runs from the Ingot IDE or from your dashboard in the browser, and follow the live log in either." },
+  { icon: "Monitor", title: "Its own app", body: "Zaprex has its own app at zaprex.dev/app. In the Ingot IDE, the small T-rex next to the agent opens it." },
   { icon: "ShieldCheck", title: "Admin controls", body: "Turn Zaprex on or off, cap minutes and spend, choose allowed models and repos, and see every action in the audit log." },
 ] as const;
 
@@ -66,11 +66,12 @@ export const SECURITY = [
 
 export const FAQ = [
   { q: "What is Zaprex?", a: "Zaprex is the background AI coding bot from Ingot, the open-source AI IDE. It works on your repositories while you're away and delivers its work as draft pull requests." },
+  { q: "Is Zaprex part of the Ingot IDE?", a: "No. Zaprex is its own app at zaprex.dev/app. It shares your Ingot account, and the Ingot IDE links to it with a small T-rex next to the agent." },
   { q: "Which model does it use?", a: "By default Zaprex runs on Ingot, our own model built on Grok and tuned for coding work. You can pick another available model for any run." },
   { q: "Can it push to my main branch?", a: "No. Zaprex always works on a new branch and opens a draft pull request. You review and merge." },
   { q: "What counts as a risky action?", a: "Things like installing packages, running database migrations, deleting files in bulk or calling outside services. Zaprex pauses and shows an approval card first." },
   { q: "Where does my code run?", a: "In a fresh, isolated cloud machine created for that run and removed when it ends. Nothing runs on your computer." },
   { q: "Which plans include it?", a: "Zaprex is part of the Ingot Pro+ and Ultra plans. See the Ingot pricing page for details." },
   { q: "Do I need a separate Zaprex account?", a: "No. Zaprex uses your Ingot account: same sign-in, same plan, same data. Sign in on zaprex.dev or the Ingot portal and you're signed in with the same account." },
-  { q: "How do I get it?", a: "Download Ingot, sign in, and open the Zaprex panel, or start a run from your Ingot dashboard on the web. Join early access to hear first when new features land." },
+  { q: "How do I get it?", a: "Open zaprex.dev/app and sign in with your Ingot account. In the Ingot IDE, click the small Zaprex T-rex next to the agent. Join early access to hear first when new features land." },
 ] as const;

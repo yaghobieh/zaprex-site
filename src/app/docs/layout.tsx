@@ -32,7 +32,7 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
           <div className="ml-auto flex items-center gap-3 md:ml-0">
             <ThemeToggle />
             <AccountButton />
-            <a href={INGOT.download} className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 lg:inline-flex">Get Zaprex</a>
+            <Link href="/app" className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 lg:inline-flex">Open app</Link>
           </div>
         </div>
       </header>

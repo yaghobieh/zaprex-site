@@ -4,6 +4,8 @@ import { INGOT } from "@/lib/site";
 export const SSO_URL = `${INGOT.portal}/sso`;
 export const CALLBACK_PATH = "/auth/callback";
 export const STATE_KEY = "zaprex.sso.state";
+/** Where to land after sign-in (a same-site path such as "/app"). */
+export const NEXT_KEY = "zaprex.sso.next";
 export const ZAPREX_DASHBOARD_URL = `${INGOT.portal}/dashboard/bot`;
 
 export interface AccountUser { id: string; name: string; email: string; avatarUrl?: string }
@@ -14,11 +16,17 @@ function randomState(): string {
 }
 
 /** Sends the browser to the Ingot portal, which signs the user in (if needed) and returns a one-time code. */
-export function startSignIn(): void {
+export function startSignIn(next = "/"): void {
   const state = randomState();
   sessionStorage.setItem(STATE_KEY, state);
+  sessionStorage.setItem(NEXT_KEY, safeNext(next));
   const returnTo = `${window.location.origin}${CALLBACK_PATH}`;
   // External navigation to the Ingot portal.
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.assign(`${SSO_URL}?${new URLSearchParams({ return_to: returnTo, state }).toString()}`);
+}
+
+/** Only same-site paths ("/app"), never "//host" or a full URL, so the callback can't be turned into an open redirect. */
+export function safeNext(value: string | null | undefined): string {
+  return value && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : "/";
 }
