@@ -16,16 +16,22 @@ function apply(pref: Pref) {
   document.documentElement.dataset.theme = dark ? "dark" : "light";
 }
 
+/** Dark (deep space) is the default; Light and System are explicit choices that we remember. */
+function savedPref(): Pref {
+  const value = localStorage.getItem(KEY);
+  return value === "light" || value === "system" ? value : "dark";
+}
+
 export function ThemeToggle() {
-  const [pref, setPref] = useState<Pref>("system");
+  const [pref, setPref] = useState<Pref | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(KEY) as Pref | null;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the saved preference after hydration
-    if (saved === "light" || saved === "dark") setPref(saved);
+    setPref(savedPref());
   }, []);
 
   useEffect(() => {
+    if (!pref) return;
     apply(pref);
     if (pref !== "system") return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -36,7 +42,7 @@ export function ThemeToggle() {
 
   const choose = (value: Pref) => {
     setPref(value);
-    if (value === "system") localStorage.removeItem(KEY);
+    if (value === "dark") localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, value);
   };
 

@@ -22,17 +22,17 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f8fc" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1020" },
+    { media: "(prefers-color-scheme: light)", color: "#070b1a" },
+    { media: "(prefers-color-scheme: dark)", color: "#070b1a" },
   ],
 };
 
-/** Applies the saved theme (or the system one) before first paint so there is no flash. */
-const THEME_SCRIPT = `(function(){try{var p=localStorage.getItem('zaprex-theme');var d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})();`;
+/** Applies the saved theme (dark space by default; light or system when chosen) before first paint so there is no flash. */
+const THEME_SCRIPT = `(function(){try{var p=localStorage.getItem('zaprex-theme');var d=p==='light'?false:p==='system'?window.matchMedia('(prefers-color-scheme: dark)').matches:true;document.documentElement.dataset.theme=d?'dark':'light';}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning className={`${inter.variable} ${display.variable} h-full antialiased`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${display.variable} h-full antialiased`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>

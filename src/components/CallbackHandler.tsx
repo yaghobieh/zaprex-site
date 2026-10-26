@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ export function CallbackHandler() {
 
   return (
     <div className="max-w-sm text-center" data-testid="auth-callback">
-      <Image src="/apple-icon.png" alt="" width={56} height={56} className={`mx-auto rounded-2xl ${failed ? "" : "animate-pulse"}`} />
+      <ZaprexMascot id="callback" state={failed ? "error" : "working"} className="mx-auto block h-24 w-24" decorative />
       <h1 className="font-display mt-4 text-2xl font-bold">{failed ? "Sign-in didn’t finish" : "Signing you in…"}</h1>
       <p className="mt-2 text-muted">{failed ? "The link expired or was already used. Try again." : "Using your Ingot account."}</p>
       {failed && (

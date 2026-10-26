@@ -16,6 +16,7 @@ export const INGOT = {
 } as const;
 
 export const NAV = [
+  { href: "#demo", label: "Demo" },
   { href: "#how", label: "How it works" },
   { href: "#features", label: "Features" },
   { href: "#routines", label: "Routines" },
