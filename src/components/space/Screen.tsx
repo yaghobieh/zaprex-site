@@ -5,8 +5,8 @@ type Props = {
   width?: number;
   height?: number;
   alt?: string;
-  /** "browser" shows the portal address bar, "ide" a desktop app title bar. */
-  kind?: "browser" | "ide";
+  /** "browser" shows the portal address bar, "app" the Zaprex app address, "ide" a desktop app title bar. */
+  kind?: "browser" | "app" | "ide";
   label?: string;
   className?: string;
   sizes?: string;
@@ -15,7 +15,7 @@ type Props = {
 
 /** A framed device mockup around a real product screenshot (or the reel, via children). */
 export function Screen({ src, width, height, alt, kind = "browser", label, className = "", sizes = "(min-width: 768px) 560px, 92vw", children }: Props) {
-  const bar = label ?? (kind === "ide" ? "Ingot IDE · Zaprex" : "ingot-portal.vercel.app/dashboard/bot");
+  const bar = label ?? (kind === "app" ? "zaprex.dev/app" : kind === "ide" ? "Ingot IDE" : "ingot-portal.vercel.app/dashboard/bot");
   return (
     <figure className={`screen ${className}`}>
       <div className="screen-bar" aria-hidden>

@@ -1,6 +1,8 @@
 # Zaprex website
 
-Marketing site for **Zaprex**, the background AI coding bot from [Ingot](https://ingot-portal.vercel.app). Live at **https://zaprex.dev**.
+Site and app for **Zaprex**, the background AI coding bot from [Ingot](https://ingot-portal.vercel.app). Live at **https://zaprex.dev**, with the app at **https://zaprex.dev/app**.
+
+Zaprex is its own app, separate from the Ingot IDE. The IDE only shows a small Zaprex T-rex next to its agent, which opens `/app` in the browser.
 
 Built with Next.js (App Router) and Tailwind CSS. Light, Dark and System themes (System is the default).
 
@@ -13,9 +15,12 @@ npm run lint
 npm run build
 ```
 
+Try `/app` without an account: run `node scripts/mock-bot-server.mjs` and start the site with `INGOT_SERVER_URL=http://127.0.0.1:4599 npm run dev`.
+
 ## Structure
 
 - `src/app/page.tsx`: the landing page (hero, how it works, features, routines, security, pricing teaser, FAQ, early access).
+- `src/app/app/` and `src/components/app/`: the Zaprex app (`/app`): shared Ingot sign-in, chat, approval cards, runs with their log, usage. It calls the bot API through this site's `/api/bot/*` proxy to ingot-server (`next.config.ts`), so the session cookie is first-party and no token reaches the page. `src/lib/bot.ts` holds the API client and types.
 - `src/lib/site.ts`: copy, links and the canonical URL (`NEXT_PUBLIC_SITE_URL`, defaults to `https://zaprex.dev`).
 - `src/app/api/waitlist/route.ts`: early-access sign-ups. For now they are written to the function log only (see the TODO there).
 - `src/components/space/`: the space scroll engine (Lenis + GSAP ScrollTrigger): starfield canvas, the flying mascot with lightning trail, pinned scenes, device mockups and the demo reel. All motion is off under `prefers-reduced-motion`.

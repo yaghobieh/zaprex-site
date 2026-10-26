@@ -4,9 +4,9 @@ import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { startSignIn, STATE_KEY } from "@/lib/auth";
+import { NEXT_KEY, safeNext, startSignIn, STATE_KEY } from "@/lib/auth";
 
-/** Finishes the shared Ingot sign-in: checks state, redeems the one-time code (sets the session cookie here), then goes home. */
+/** Finishes the shared Ingot sign-in: checks state, redeems the one-time code (sets the session cookie here), then goes back where sign-in started (home or /app). */
 export function CallbackHandler() {
   const params = useSearchParams();
   const [failed, setFailed] = useState(false);
@@ -15,14 +15,16 @@ export function CallbackHandler() {
     const code = params.get("code") ?? "";
     const state = params.get("state") ?? "";
     const expected = sessionStorage.getItem(STATE_KEY);
+    const next = safeNext(sessionStorage.getItem(NEXT_KEY));
     sessionStorage.removeItem(STATE_KEY);
+    sessionStorage.removeItem(NEXT_KEY);
     if (!code || !state || state !== expected) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- terminal error state for an invalid callback
       setFailed(true);
       return;
     }
     fetch("/api/auth/web-handoff/redeem", { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ code }) })
-      .then(response => { if (response.ok) window.location.replace("/"); else setFailed(true); })
+      .then(response => { if (response.ok) window.location.replace(next); else setFailed(true); })
       .catch(() => setFailed(true));
   }, [params]);
 
@@ -33,7 +35,7 @@ export function CallbackHandler() {
       <p className="mt-2 text-muted">{failed ? "The link expired or was already used. Try again." : "Using your Ingot account."}</p>
       {failed && (
         <div className="mt-6 flex justify-center gap-3">
-          <button type="button" onClick={startSignIn} className="h-11 rounded-full bg-navy px-5 font-semibold text-white dark:bg-blue">Try again</button>
+          <button type="button" onClick={() => startSignIn()} className="h-11 rounded-full bg-navy px-5 font-semibold text-white dark:bg-blue">Try again</button>
           <Link href="/" className="inline-flex h-11 items-center rounded-full border border-line px-5 font-semibold">Home</Link>
         </div>
       )}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Download, GitPullRequestDraft, Hand, Sparkles } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Download, GitPullRequestDraft, Hand, Rocket, Sparkles } from "lucide-react";
 import { AccountButton } from "@/components/AccountButton";
 import { Icon } from "@/components/Icon";
 import { DemoReel } from "@/components/space/DemoReel";
@@ -35,7 +35,7 @@ const JSON_LD = {
 /** Real product screenshots (Ingot test mode, sample repo) shown beside each "what it does" stop. */
 const STOP_SHOTS = [
   { src: "/media/runlog.webp", width: 999, height: 668, kind: "browser", alt: "Real Zaprex run log in the Ingot dashboard: npm test fails, Zaprex fixes sum.mjs, the diff, and npm test passes" },
-  { src: "/media/ide-done.webp", width: 358, height: 568, kind: "ide", alt: "Real Zaprex panel in the Ingot IDE: run finished, tests pass, with a link to the draft pull request" },
+  { src: "/media/app-done.webp", width: 358, height: 568, kind: "app", alt: "The Zaprex app on a phone: run finished, tests pass, with a link to the draft pull request" },
   { src: "/media/routines.webp", width: 1100, height: 219, kind: "browser", alt: "Real Zaprex routines tab: an active nightly test-and-fix routine with its next run time" },
   { src: "/media/task.webp", width: 999, height: 454, kind: "browser", alt: "Real Zaprex chat in the Ingot dashboard: you ask it to fix failing tests and it reports back when the run finishes" },
 ] as const;
@@ -59,9 +59,9 @@ function SectionTitle({ eyebrow, title, body, id }: { eyebrow: string; title: Re
 
 function PrimaryCta({ className = "" }: { className?: string }) {
   return (
-    <a href={INGOT.download} data-testid="cta-get" className={`btn-primary inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold text-white transition hover:-translate-y-0.5 ${className}`}>
-      <Download aria-hidden className="h-4 w-4" /> Get Zaprex in Ingot
-    </a>
+    <Link href="/app" data-testid="cta-get" className={`btn-primary inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold text-white transition hover:-translate-y-0.5 ${className}`}>
+      <Rocket aria-hidden className="h-4 w-4" /> Open the Zaprex app
+    </Link>
   );
 }
 
@@ -160,7 +160,7 @@ export default function Home() {
             <div className="space-y-16 md:space-y-24">
               {WHAT_IT_DOES.map((item, index) => (
                 <div key={item.title} className={`flex flex-col items-center gap-8 md:gap-14 ${index % 2 ? "md:flex-row-reverse" : "md:flex-row"}`}>
-                  <div className={`relative w-full shrink-0 ${STOP_SHOTS[index].kind === "ide" ? "max-w-[240px] md:w-[240px]" : "max-w-md md:w-[440px]"}`} data-speed={index % 2 ? 0.5 : 0.8}>
+                  <div className={`relative w-full shrink-0 ${STOP_SHOTS[index].kind === "app" ? "max-w-[240px] md:w-[240px]" : "max-w-md md:w-[440px]"}`} data-speed={index % 2 ? 0.5 : 0.8}>
                     <span aria-hidden className={`planet ${PLANETS[index % PLANETS.length]} ${index % 2 ? "planet-ringed -right-10" : "-left-10"} absolute -top-12 h-28 w-28 md:h-40 md:w-40`} />
                     <Screen {...STOP_SHOTS[index]} className="relative" sizes="(min-width: 768px) 440px, 92vw" />
                   </div>
@@ -300,7 +300,7 @@ export default function Home() {
             </div>
             <div className="relative pb-10 md:pb-16" data-reveal="0.1">
               <Screen src="/media/approval.webp" width={1100} height={613} className="mission relative" alt="Real Zaprex chat in the Ingot dashboard: an approval card for npm install --save-dev vitest with Approve, Approve for this run and Reject, and a finished run linking its draft pull request" />
-              <Screen kind="ide" src="/media/ide-approval.webp" width={358} height={552} sizes="220px" className="float absolute -bottom-6 -right-3 w-36 md:-right-8 md:w-48" alt="Real Zaprex panel in the Ingot IDE asking to approve adding the date-fns dependency" />
+              <Screen kind="app" src="/media/app-approval.webp" width={358} height={552} sizes="220px" className="float absolute -bottom-6 -right-3 w-36 md:-right-8 md:w-48" alt="The Zaprex app on a phone asking to approve adding the date-fns dependency" />
             </div>
           </div>
         </section>
@@ -350,8 +350,8 @@ export default function Home() {
                 <ZaprexMascot id="landing" state="done" className="zx-static mascot h-full w-full" decorative />
               </div>
             </div>
-            <h2 className="font-display mt-4 text-4xl font-bold tracking-tight sm:text-6xl" data-reveal>Get Zaprex in Ingot</h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-muted">Download Ingot to start, or join early access and we&apos;ll email you as new Zaprex features roll out.</p>
+            <h2 className="font-display mt-4 text-4xl font-bold tracking-tight sm:text-6xl" data-reveal>Open Zaprex</h2>
+            <p className="mx-auto mt-4 max-w-xl text-lg text-muted">Sign in with your Ingot account to start, or join early access and we&apos;ll email you as new Zaprex features roll out.</p>
             <div className="mt-8"><PrimaryCta /></div>
             <div className="mt-10"><WaitlistForm /></div>
             <p className="mt-3 text-xs text-muted">Only product updates. Unsubscribe anytime. See the <a className="underline hover:text-ink" href={INGOT.privacy}>privacy policy</a>.</p>
@@ -367,7 +367,8 @@ export default function Home() {
           </div>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 md:ml-auto" aria-label="Footer">
             <Link href="/docs" className="hover:text-ink">Docs</Link>
-            <a href={INGOT.download} className="hover:text-ink">Download</a>
+            <Link href="/app" className="hover:text-ink">App</Link>
+            <a href={INGOT.download} className="hover:text-ink">Download Ingot</a>
             <a href={INGOT.pricing} className="hover:text-ink">Pricing</a>
             <a href={INGOT.github} className="hover:text-ink" rel="noopener noreferrer">GitHub</a>
             <a href={INGOT.support} className="hover:text-ink">Support</a>
