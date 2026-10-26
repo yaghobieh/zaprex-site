@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* Theme: System by default; data-theme on <html> is set before first paint (see layout). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --navy: #1b2647;
+  --blue: #3b6fd9;
+  --gold: #d9a04e;
+  --bg: #f7f8fc;
+  --bg-soft: #eef1f9;
+  --surface: #ffffff;
+  --border: #dfe4f0;
+  --text: #121a33;
+  --muted: #59627d;
+  --glow: rgba(59, 111, 217, 0.28);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1020;
+  --bg-soft: #111831;
+  --surface: #151d38;
+  --border: #26305a;
+  --text: #eef1fb;
+  --muted: #9aa5c7;
+  --glow: rgba(59, 111, 217, 0.45);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-blue: var(--blue);
+  --color-gold: var(--gold);
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-display-face);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-display { font-family: var(--font-display-face), var(--font-inter), sans-serif; }
+
+.text-gradient {
+  background: linear-gradient(100deg, var(--blue) 0%, #6f9bff 45%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-glow {
+  background:
+    radial-gradient(40% 50% at 70% 40%, var(--glow), transparent 70%),
+    radial-gradient(30% 35% at 78% 78%, rgba(217, 160, 78, 0.22), transparent 70%);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 30%, transparent 75%);
+}
+
+.mascot { filter: drop-shadow(0 30px 50px rgba(27, 38, 71, 0.35)) drop-shadow(0 0 40px var(--glow)); }
+
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.float { animation: float 6s ease-in-out infinite; }
+.float-delay { animation: float 7s ease-in-out 1.2s infinite; }
+@keyframes zap { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.zap { animation: zap 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .float, .float-delay, .zap { animation: none; } html { scroll-behavior: auto; } }
+
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] .chev { transform: rotate(45deg); }
