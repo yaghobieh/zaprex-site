@@ -1,4 +1,5 @@
 import { INGOT } from "@/lib/site";
+import { startNativeSignIn } from "@/lib/native";
 
 /** Shared Ingot accounts (one user table, one database). Sign-in happens on the Ingot portal and is handed back here. */
 export const SSO_URL = `${INGOT.portal}/sso`;
@@ -20,6 +21,8 @@ export function startSignIn(next = "/"): void {
   const state = randomState();
   sessionStorage.setItem(STATE_KEY, state);
   sessionStorage.setItem(NEXT_KEY, safeNext(next));
+  // IDEA-191: in the iOS/Android app, sign-in runs in the system browser sheet and comes back via zaprex://auth/callback.
+  if (startNativeSignIn(state)) return;
   const returnTo = `${window.location.origin}${CALLBACK_PATH}`;
   // External navigation to the Ingot portal.
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination

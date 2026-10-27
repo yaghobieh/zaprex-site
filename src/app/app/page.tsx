@@ -15,11 +15,11 @@ export const metadata: Metadata = {
 /** zaprex.dev/app: the Zaprex app itself (IDEA-173). Ingot links here from the small T-rex next to its agent. */
 export default function AppPage() {
   return (
-    <div className="zx-app-surface flex min-h-screen flex-col overflow-x-hidden">
+    <div className="zx-app-surface zx-app-shell flex h-dvh flex-col overflow-hidden">
       <div aria-hidden className="space-bg pointer-events-none fixed inset-0 -z-10" />
       <div aria-hidden className="docs-nebula pointer-events-none fixed inset-0 -z-10" />
-      <header className="glass-bar sticky top-0 z-40">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-3 sm:gap-4 sm:px-5">
+      <header className="glass-bar z-40 shrink-0 pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:h-16 sm:gap-4 sm:px-5">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Zaprex home">
             <ZaprexMascot id="app-nav" className="-my-1 h-10 w-10" decorative />
             <span className="font-display hidden text-xl font-extrabold tracking-tight sm:inline">Zaprex</span>

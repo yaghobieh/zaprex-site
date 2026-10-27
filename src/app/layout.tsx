@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // IDEA-191: edge to edge on phones (notch / home indicator handled with safe-area insets); the keyboard resizes the page.
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#070b1a" },
     { media: "(prefers-color-scheme: dark)", color: "#070b1a" },
