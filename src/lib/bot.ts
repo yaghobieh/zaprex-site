@@ -16,7 +16,7 @@ export interface Repo { id: string; fullName: string; defaultBranch: string; ena
 export interface Entitlement { enabled: boolean; plan: string; reason: string | null }
 export interface Usage { minutesUsed: number; minutesLimit: number | null; activeRuns: number; concurrentLimit: number | null }
 export type Decision = "approve_once" | "approve_run" | "reject";
-export type Pose = "idle" | "thinking" | "working" | "approval" | "done" | "error";
+export type Pose = "idle" | "thinking" | "talking" | "working" | "approval" | "done" | "error";
 
 export const BOT_API = "/api/bot";
 export const MAX_PROMPT = 4_000;
@@ -112,4 +112,51 @@ export function mascotPose(runs: readonly Run[], now = Date.now()): Pose {
   const latest = [...runs].sort((a, b) => time(b) - time(a))[0];
   const pose = latest && FINISHED_POSE[latest.status];
   return pose && now - time(latest) <= RECENT_RUN_MS ? pose : "idle";
+}
+
+/** IDEA-177: one streamed Zaprex reply (`POST /api/bot/talk`, SSE `data:` lines). */
+export type TalkEvent =
+  | { type: "start"; model: string }
+  | { type: "text"; text: string }
+  | { type: "done"; task: string | null; usage: { inputTokens: number; outputTokens: number } | null }
+  | { type: "error"; code: string };
+
+export const TASK_LINE = /^TASK:\s*(.+)$/m;
+/** The reply without its trailing `TASK: …` line (shown as a "Start run" button instead). */
+export const withoutTaskLine = (text: string): string => text.replace(TASK_LINE, "").trim();
+export const taskIn = (text: string): string | undefined => TASK_LINE.exec(text)?.[1]?.trim();
+
+export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal): Promise<ApiResponse | undefined> {
+  let response: Response;
+  try {
+    response = await fetch(`${BOT_API}/talk`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", signal,
+      headers: { "content-type": "application/json", accept: "text/event-stream" },
+      body: JSON.stringify({ text, repoId }),
+    });
+  } catch {
+    return { status: 0, body: {} };
+  }
+  if (!response.ok || !response.body) {
+    return { status: response.status, body: (await response.json().catch(() => ({}))) as Record<string, unknown> };
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += value;
+      let cut = buffer.indexOf("\n\n");
+      while (cut >= 0) {
+        const chunk = buffer.slice(0, cut).split("\n").filter(line => line.startsWith("data:")).map(line => line.slice(5).trimStart()).join("\n");
+        buffer = buffer.slice(cut + 2);
+        if (chunk) { try { onEvent(JSON.parse(chunk) as TalkEvent); } catch { /* ignore a malformed line */ } }
+        cut = buffer.indexOf("\n\n");
+      }
+    }
+  } catch {
+    if (!signal?.aborted) onEvent({ type: "error", code: "offline" });
+  }
+  return undefined;
 }
