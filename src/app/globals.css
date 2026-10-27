@@ -245,3 +245,24 @@ html[data-theme="dark"]:has(.zx-app-surface) { background: #0e0f12; }
 [data-theme="dark"] .zx-app-surface .glass { backdrop-filter: none; box-shadow: none; }
 [data-theme="dark"] .zx-app-surface .glass-bar { background: color-mix(in srgb, #0e0f12 88%, transparent); }
 [data-theme="dark"] .zx-app-surface .zx-code { background: #1e2127; }
+
+/* ---------- Composer (IDEA-182): one wide pill, + on the left, mic and a round send on the right ---------- */
+.zx-composer { background: #ffffff; border-color: rgba(18, 26, 51, 0.12); box-shadow: 0 1px 2px rgba(18, 26, 51, 0.06); }
+.zx-composer:focus-within { border-color: rgba(18, 26, 51, 0.28); }
+.zx-round { background: rgba(18, 26, 51, 0.06); color: var(--text); }
+.zx-round:hover:not(:disabled) { background: rgba(18, 26, 51, 0.11); }
+.zx-send { background: #121a33; color: #ffffff; }
+[data-theme="dark"] .zx-composer { background: #1e2127; border-color: #2a2e36; box-shadow: none; }
+[data-theme="dark"] .zx-composer:focus-within { border-color: #3a3f4a; }
+[data-theme="dark"] .zx-round { background: rgba(255, 255, 255, 0.07); }
+[data-theme="dark"] .zx-round:hover:not(:disabled) { background: rgba(255, 255, 255, 0.13); }
+[data-theme="dark"] .zx-send { background: #f4f5f7; color: #0e0f12; }
+/* Live status text shimmer while Zaprex works. */
+.zx-activity {
+  background: linear-gradient(90deg, var(--muted) 0%, var(--muted) 40%, var(--text) 50%, var(--muted) 60%, var(--muted) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: zx-shimmer 2.2s linear infinite;
+}
+@keyframes zx-shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .zx-activity { animation: none; color: var(--muted); } }
