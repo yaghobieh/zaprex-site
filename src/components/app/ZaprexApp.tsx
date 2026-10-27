@@ -1,14 +1,22 @@
 "use client";
 
-import { ExternalLink, GitPullRequestDraft, Loader2, Play, RefreshCw, Send, ShieldAlert, Square } from "lucide-react";
+import { ArrowUp, ExternalLink, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
 import { startSignIn, ZAPREX_DASHBOARD_URL, type AccountUser } from "@/lib/auth";
 import {
-  ACTIVE_POLL_MS, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, prLinkIn, STATUS_LABELS, talk, taskIn, withoutTaskLine,
+  ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, STATUS_LABELS, talk, taskIn, withoutTaskLine,
   type Approval, type Decision, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
 } from "@/lib/bot";
 import { INGOT } from "@/lib/site";
+
+/** Browser speech recognition (Chrome/Safari prefix); the mic button only shows where it exists. */
+type Recognition = { lang: string; interimResults: boolean; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
+const speechRecognition = (): (new () => Recognition) | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const scope = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+  return scope.SpeechRecognition ?? scope.webkitSpeechRecognition;
+};
 
 type Session = { kind: "loading" } | { kind: "signed-out" } | { kind: "signed-in"; user: AccountUser };
 
@@ -23,6 +31,8 @@ interface BotState {
   messages: Message[];
   approvals: Approval[];
   runs: Run[];
+  /** Latest event of the active run, for the live status line (IDEA-182). */
+  lastEvent?: RunEvent;
   error?: string;
 }
 
@@ -43,6 +53,10 @@ export function ZaprexApp() {
   const [openRun, setOpenRun] = useState<string>();
   const [live, setLive] = useState<Live>();
   const [runLog, setRunLog] = useState<RunEvent[]>([]);
+  const [taskMode, setTaskMode] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [canDictate, setCanDictate] = useState(false);
+  const recognition = useRef<Recognition | undefined>(undefined);
   const thread = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const poll = useRef<() => void>(() => undefined);
@@ -63,6 +77,9 @@ export function ZaprexApp() {
       botApi("GET", "/status"), botApi("GET", "/usage"), botApi("GET", "/repos"), botApi("GET", chatPath), botApi("GET", "/approvals"), botApi("GET", "/runs?limit=20"),
     ]);
     if (status.status === 401) { setSession({ kind: "signed-out" }); return; }
+    const activeRun = runs.status === 200 ? ((runs.body.runs as Run[] | undefined) ?? []).find(isActive) : undefined;
+    const events = activeRun ? await botApi("GET", `/runs/${encodeURIComponent(activeRun.id)}/events`) : undefined;
+    const lastEvent = events?.status === 200 ? ((events.body.events as RunEvent[] | undefined) ?? []).at(-1) : undefined;
     setState(previous => {
       if (status.status !== 200) return { ...previous, loaded: true, error: errorText(status) };
       return {
@@ -74,6 +91,7 @@ export function ZaprexApp() {
         messages: chat.status === 200 ? ((chat.body.messages as Message[] | undefined) ?? []) : previous.messages,
         approvals: approvals.status === 200 ? ((approvals.body.approvals as Approval[] | undefined) ?? []) : previous.approvals,
         runs: runs.status === 200 ? ((runs.body.runs as Run[] | undefined) ?? []) : previous.runs,
+        lastEvent,
       };
     });
     const active = runs.status === 200 && ((runs.body.runs as Run[] | undefined) ?? []).some(isActive);
@@ -90,6 +108,40 @@ export function ZaprexApp() {
     void refresh();
     return () => clearTimeout(timer.current);
   }, [session.kind, refresh]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- feature detection needs the browser
+    setCanDictate(!!speechRecognition());
+    return () => recognition.current?.stop();
+  }, []);
+
+  /** Mic (IDEA-182): dictation into the input with the browser's own speech recognition. */
+  function toggleDictation() {
+    if (listening) { recognition.current?.stop(); return; }
+    const Speech = speechRecognition();
+    if (!Speech) return;
+    const rec = new Speech();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = false;
+    rec.onresult = event => {
+      const said = Array.from(event.results).map(result => result[0]?.transcript ?? "").join(" ").trim();
+      if (said) setDraft(current => (current ? `${current} ${said}` : said));
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recognition.current = rec;
+    setListening(true);
+    rec.start();
+  }
+
+  function submit() {
+    if (!taskMode) { send(); return; }
+    const task = draft.trim();
+    if (!task || busy) return;
+    setDraft("");
+    setTaskMode(false);
+    startRun(task);
+  }
 
   useEffect(() => {
     thread.current?.scrollTo({ top: thread.current.scrollHeight });
@@ -177,13 +229,17 @@ export function ZaprexApp() {
 
   const pose: Pose = live ? live.phase : mascotPose(state.runs);
   const notice = modeNotice(state);
+  const plan = planLabel(state.entitlement);
+  const activeRun = state.runs.find(isActive);
+  const activity = live ? (live.phase === "thinking" ? "Thinking" : "Answering") : activityFor(activeRun, state.lastEvent);
+  const lastBot = [...state.messages].reverse().find(message => message.role === "bot" && message.kind !== "approval")?.id;
   const pending = state.approvals.filter(approval => approval.status === "pending");
   const locked = state.entitlement && !state.entitlement.enabled;
   const running = state.runs.filter(isActive).length;
 
   return (
     <div className="mx-auto grid w-full min-w-0 max-w-7xl flex-1 grid-cols-1 gap-5 px-3 pb-6 pt-4 sm:px-4 lg:grid-cols-[minmax(0,1fr)_340px]" data-testid="zaprex-app">
-      <section className="glass flex min-h-[70vh] min-w-0 flex-col overflow-hidden rounded-3xl" aria-label="Chat with Zaprex">
+      <section className="glass flex h-[calc(100dvh-6.5rem)] min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-3xl" aria-label="Chat with Zaprex">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-5">
           <LiveMascot id="app-head" pose={pose} className="-my-2 h-12 w-12" />
           <div className="min-w-0">
@@ -194,8 +250,8 @@ export function ZaprexApp() {
                 : "Your background coding bot"}
             </p>
           </div>
-          {notice === "test" && <span className="rounded-full border border-gold/50 bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold" title="Runs use a local sandbox and the mock model" data-testid="app-test-mode">Test mode</span>}
-          {notice === "sandbox" && <span className="rounded-full border border-sky/40 bg-sky/10 px-2.5 py-0.5 text-xs font-semibold text-sky" title="Runs use a scratch sandbox on the live model">Sandbox</span>}
+          {plan && <span className="rounded-full border border-gold/50 bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold" data-testid="app-plan">{plan}</span>}
+          {notice === "test" && <span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-semibold text-muted" title="Chat and runs use the mock model" data-testid="app-test-mode">Test mode</span>}
           <div className="ml-auto flex items-center gap-2">
             {state.repos.length > 0 && (
               <select aria-label="Repository" data-testid="app-repo" value={repoId} onChange={event => setRepoId(event.target.value)}
@@ -210,7 +266,7 @@ export function ZaprexApp() {
           </div>
         </div>
 
-        <div ref={thread} className="flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5" data-testid="app-thread" aria-live="polite">
+        <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5" data-testid="app-thread" aria-live="polite">
           {!state.loaded && <p className="text-sm text-muted">Loading…</p>}
           {state.loaded && state.error && !state.entitlement && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
           {state.loaded && locked && (
@@ -229,11 +285,12 @@ export function ZaprexApp() {
               </div>
             </div>
           )}
-          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} />)}
+          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
           {live && (
             <>
               <ChatMessage message={{ id: -1, role: "user", kind: "text", text: live.user, runId: null, approvalId: null, createdAt: "" }} />
-              <div className="flex justify-start" data-role="bot" data-testid="app-live-reply">
+              <div className="flex items-end justify-start gap-2" data-role="bot" data-testid="app-live-reply">
+                <LiveMascot id="app-avatar-live" pose={live.phase} testId="app-avatar" className="-mb-1 h-10 w-10 shrink-0" />
                 <div className="max-w-[85%] rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
                   <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>
                   {live.reply
@@ -259,28 +316,46 @@ export function ZaprexApp() {
         ))}
 
         {actionError && <p role="alert" className="px-5 pb-2 text-sm text-red-400">{actionError}</p>}
-        <form className="flex items-end gap-2 border-t border-line p-4" onSubmit={event => { event.preventDefault(); send(); }}>
-          <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={2} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
-            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }}
-            placeholder="Message Zaprex: ask anything, or give it a task…" aria-label="Message Zaprex"
-            className="min-h-12 flex-1 resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-sm outline-none focus:border-blue" />
-          <button type="submit" disabled={busy || !draft.trim() || !!locked} data-testid="app-send" className="btn-primary inline-flex h-12 items-center gap-2 rounded-full px-5 font-semibold text-white disabled:opacity-50">
-            {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Send aria-hidden className="h-4 w-4" />} Send
-          </button>
-          <button type="button" disabled={busy || !draft.trim() || !!locked} onClick={() => { const task = draft.trim(); setDraft(""); startRun(task); }} title="Start a background run with this as the task" data-testid="app-run"
-            className="inline-flex h-12 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold hover:border-blue disabled:opacity-50">
-            <Play aria-hidden className="h-4 w-4" /> Run
-          </button>
-        </form>
+        <div className="px-3 pb-3 pt-1 sm:px-4">
+          <div className="flex h-7 items-center gap-2 px-2 text-sm" aria-live="polite" data-testid="app-status">
+            <LiveMascot id="app-status" pose={live ? live.phase : pose} testId="app-status-mascot" className="h-7 w-7 shrink-0" />
+            <span className={activity ? "zx-activity text-muted" : "text-muted/70"}>{activity ?? (locked ? "Zaprex is locked on this plan" : "Ready when you are")}</span>
+          </div>
+          <form className="zx-composer mt-1 flex items-end gap-2 rounded-[28px] border p-1.5" onSubmit={event => { event.preventDefault(); submit(); }} data-testid="app-composer">
+            <button type="button" onClick={() => setTaskMode(on => !on)} aria-pressed={taskMode} disabled={!!locked} data-testid="app-plus"
+              title={taskMode ? "Back to chat" : "Run as a background task (draft PR)"} aria-label="Run as a background task"
+              className={`zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition ${taskMode ? "rotate-45 bg-gold text-navy" : ""}`}>
+              <Plus aria-hidden className="h-5 w-5" />
+            </button>
+            {taskMode && <span className="mb-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-xs font-semibold text-gold" data-testid="app-task-chip"><Play aria-hidden className="h-3 w-3" /> Task</span>}
+            <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={1} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
+              onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }}
+              placeholder={taskMode ? "Describe the task: Zaprex opens a draft PR…" : "Ask Zaprex anything…"} aria-label="Message Zaprex"
+              className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-[15px] leading-5 outline-none [field-sizing:content] placeholder:text-muted" />
+            {canDictate && (
+              <button type="button" onClick={toggleDictation} disabled={!!locked} aria-pressed={listening} title={listening ? "Stop dictation" : "Dictate"} aria-label="Dictate" data-testid="app-mic"
+                className={`zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full ${listening ? "animate-pulse text-gold" : "text-muted"}`}>
+                <Mic aria-hidden className="h-[18px] w-[18px]" />
+              </button>
+            )}
+            <button type="submit" disabled={busy || !draft.trim() || !!locked} data-testid="app-send" aria-label={taskMode ? "Start run" : "Send"} title={taskMode ? "Start run" : "Send"}
+              className="zx-send grid h-9 w-9 shrink-0 place-items-center rounded-full transition disabled:opacity-40">
+              {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <ArrowUp aria-hidden className="h-5 w-5" strokeWidth={2.5} />}
+            </button>
+          </form>
+        </div>
       </section>
 
       <aside className="flex min-w-0 flex-col gap-5">
         <section className="glass rounded-3xl p-5" aria-label="Runs" data-testid="app-runs">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-bold">Runs</h2>
-            <span className="text-xs text-muted">{running ? `${running} running` : "none running"}</span>
+            <span className="flex items-center gap-2 text-xs text-muted">
+              {notice === "sandbox" && <span className="rounded-full border border-line px-2 py-0.5 font-semibold" title="Background runs use a scratch sandbox on the live model" data-testid="app-sandbox">Sandbox</span>}
+              {running ? `${running} running` : "none running"}
+            </span>
           </div>
-          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press Run, or Start run on a reply.</p>}
+          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press + to give Zaprex a task, or Start run on a reply.</p>}
           <ul className="mt-3 space-y-2">
             {state.runs.slice(0, 8).map(run => {
               const active = isActive(run);
@@ -314,7 +389,7 @@ export function ZaprexApp() {
   );
 }
 
-function ChatMessage({ message, onRun }: { message: Message; onRun?: (task: string) => void }) {
+function ChatMessage({ message, onRun, avatar }: { message: Message; onRun?: (task: string) => void; avatar?: React.ReactNode }) {
   if (message.kind === "approval") {
     return <p className="flex items-center gap-2 text-xs text-muted"><ShieldAlert aria-hidden className="h-3.5 w-3.5 text-gold" /> {message.text}</p>;
   }
@@ -322,7 +397,8 @@ function ChatMessage({ message, onRun }: { message: Message; onRun?: (task: stri
   const pr = mine ? undefined : prLinkIn(message.text);
   const task = mine ? undefined : taskIn(message.text);
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"}`} data-role={message.role}>
+    <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role}>
+      {!mine && (avatar ?? <span aria-hidden className="w-10 shrink-0" />)}
       <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "bg-blue text-white" : "border border-line bg-surface"}`}>
         {!mine && <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>}
         <p className="whitespace-pre-wrap break-words">{task ? withoutTaskLine(message.text) : message.text}</p>

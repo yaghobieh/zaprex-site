@@ -160,3 +160,35 @@ export async function talk(text: string, repoId: string | null, onEvent: (event:
   }
   return undefined;
 }
+
+const PLAN_LABELS: Record<string, string> = { free: "Free", pro: "Pro", pro_plus: "Pro+", ultra: "Ultra", team: "Team", enterprise: "Enterprise" };
+
+/** IDEA-182: the plan name for the header badge. Free with Zaprex enabled means staff access (admins are never paywalled). */
+export function planLabel(entitlement?: Entitlement): string | undefined {
+  if (!entitlement) return undefined;
+  if (entitlement.plan === "free" && entitlement.enabled) return "Staff";
+  return PLAN_LABELS[entitlement.plan] ?? entitlement.plan;
+}
+
+const READ_COMMAND = /^(cat|ls|grep|rg|find|head|tail|sed -n|git (log|show|diff|status))\b/;
+const TEST_COMMAND = /\b(test|vitest|jest|pytest|mocha|go test|cargo test|npm (run )?test)\b/;
+
+/** IDEA-182: short live activity text ("Thinking", "Reading files", "Running tests") from a run's latest event. */
+export function activityFor(run: Run | undefined, event: RunEvent | undefined): string | undefined {
+  if (!run || !isActive(run)) return undefined;
+  if (run.status === "awaiting_approval") return "Waiting for your approval";
+  if (run.status === "queued" || run.status === "starting") return "Starting the sandbox";
+  if (run.status === "finishing") return "Opening a draft pull request";
+  const command = typeof event?.payload.command === "string" ? event.payload.command.trim() : "";
+  switch (event?.type) {
+    case "tool":
+      if (TEST_COMMAND.test(command)) return "Running tests";
+      if (READ_COMMAND.test(command)) return "Reading files";
+      if (/^(npm|pnpm|yarn) (ci|install)\b/.test(command)) return "Installing dependencies";
+      return "Running commands";
+    case "diff": return "Editing files";
+    case "pull_request": return "Opening a draft pull request";
+    case "approval": return "Waiting for your approval";
+    default: return "Thinking";
+  }
+}
