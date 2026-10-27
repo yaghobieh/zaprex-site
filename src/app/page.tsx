@@ -380,6 +380,7 @@ export default function Home() {
             <a href={INGOT.github} className="hover:text-ink" rel="noopener noreferrer">GitHub</a>
             <a href={INGOT.support} className="hover:text-ink">Support</a>
             <a href={INGOT.terms} className="hover:text-ink">Terms</a>
+            <Link href="/about" className="hover:text-ink">About</Link>
             <a href={INGOT.privacy} className="hover:text-ink">Privacy</a>
           </nav>
           <p className="md:ml-4">© 2026 Ingot</p>

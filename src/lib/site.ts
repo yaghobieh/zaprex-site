@@ -83,3 +83,12 @@ export const FAQ = [
   { q: "Do I need a separate Zaprex account?", a: "No. Zaprex uses your Ingot account: same sign-in, same plan, same data. Sign in on zaprex.dev or the Ingot portal and you're signed in with the same account." },
   { q: "How do I get it?", a: "Open zaprex.dev/app and sign in with your Ingot account. In the Ingot IDE, click the small Zaprex T-rex next to the agent. Join early access to hear first when new features land." },
 ] as const;
+
+/** IDEA-179: the creator, for the About page and structured data (Person + Organization JSON-LD). */
+export const CREATOR = {
+  name: "John Yaghobieh",
+  jobTitle: "Full Stack Tech Lead",
+  founderOf: "ForgeStack",
+  github: "https://github.com/yaghobieh",
+  website: "https://yaghobieh.github.io/yaghobieh/",
+} as const;
