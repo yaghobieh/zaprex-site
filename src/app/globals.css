@@ -56,7 +56,8 @@
   --font-display: var(--font-display-face);
 }
 
-html { scroll-behavior: smooth; background: var(--bg); }
+/* overflow-x: clip on html too: the fixed nebula and the hero orbit rings must never widen the phone layout viewport. */
+html { scroll-behavior: smooth; background: var(--bg); overflow-x: clip; }
 body {
   background: transparent;
   color: var(--text);
