@@ -1,12 +1,12 @@
 "use client";
 
-import { ExternalLink, GitPullRequestDraft, Loader2, RefreshCw, Send, ShieldAlert, Square } from "lucide-react";
+import { ExternalLink, GitPullRequestDraft, Loader2, Play, RefreshCw, Send, ShieldAlert, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
 import { startSignIn, ZAPREX_DASHBOARD_URL, type AccountUser } from "@/lib/auth";
 import {
-  ACTIVE_POLL_MS, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, prLinkIn, STATUS_LABELS,
-  type Approval, type Decision, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
+  ACTIVE_POLL_MS, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, prLinkIn, STATUS_LABELS, talk, taskIn, withoutTaskLine,
+  type Approval, type Decision, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
 } from "@/lib/bot";
 import { INGOT } from "@/lib/site";
 
@@ -27,7 +27,10 @@ interface BotState {
 }
 
 const EMPTY: BotState = { loaded: false, repos: [], messages: [], approvals: [], runs: [] };
-const EXAMPLES = ["Fix the failing tests", "Add pagination to the orders list", "Update minor dependencies and run the tests"];
+const EXAMPLES = ["Hi Zaprex! What can you do?", "Fix the failing tests", "How should I add pagination to the orders list?"];
+
+/** A reply being streamed right now (IDEA-177). */
+interface Live { user: string; reply: string; phase: "thinking" | "talking" }
 
 /** zaprex.dev/app (IDEA-173): Zaprex as its own app. Same account, thread, runs and approvals as everywhere else. */
 export function ZaprexApp() {
@@ -38,6 +41,7 @@ export function ZaprexApp() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [openRun, setOpenRun] = useState<string>();
+  const [live, setLive] = useState<Live>();
   const [runLog, setRunLog] = useState<RunEvent[]>([]);
   const thread = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -89,7 +93,7 @@ export function ZaprexApp() {
 
   useEffect(() => {
     thread.current?.scrollTo({ top: thread.current.scrollHeight });
-  }, [state.messages.length]);
+  }, [state.messages.length, live?.reply.length]);
 
   async function act(work: () => Promise<string>) {
     setBusy(true);
@@ -99,12 +103,32 @@ export function ZaprexApp() {
     setBusy(false);
   }
 
+  /** Chat (IDEA-177): Zaprex answers right away, streamed; a proposed task becomes a "Start run" button. */
   function send(text = draft) {
     const prompt = text.trim().slice(0, MAX_PROMPT);
     if (!prompt || busy) return;
     setDraft("");
+    setBusy(true);
+    setActionError("");
+    setLive({ user: prompt, reply: "", phase: "thinking" });
+    void (async () => {
+      let failed = "";
+      const response = await talk(prompt, repoId || null, event => {
+        if (event.type === "text") setLive(current => current && { ...current, reply: current.reply + event.text, phase: "talking" });
+        if (event.type === "error") failed = errorText({ status: 502, body: { error: event.code } });
+      });
+      if (response) failed = errorText(response);
+      await refresh();
+      setLive(undefined);
+      setActionError(failed);
+      setBusy(false);
+    })();
+  }
+
+  /** Starts a background run (draft PR) for a task Zaprex proposed or the user typed. */
+  function startRun(task: string) {
     void act(async () => {
-      const response = await botApi("POST", "/chat", { text: prompt, repoId: repoId || null });
+      const response = await botApi("POST", "/chat", { text: task, repoId: repoId || null });
       await refresh();
       return response.status === 200 || response.status === 201 ? "" : errorText(response);
     });
@@ -151,7 +175,7 @@ export function ZaprexApp() {
     );
   }
 
-  const pose = mascotPose(state.runs);
+  const pose: Pose = live ? live.phase : mascotPose(state.runs);
   const notice = modeNotice(state);
   const pending = state.approvals.filter(approval => approval.status === "pending");
   const locked = state.entitlement && !state.entitlement.enabled;
@@ -197,14 +221,28 @@ export function ZaprexApp() {
           )}
           {state.loaded && !locked && state.messages.length === 0 && (
             <div className="py-10 text-center">
-              <p className="font-display text-2xl font-bold">What should Zaprex work on?</p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-muted">It works in its own cloud sandbox and hands you a draft pull request. It never pushes to protected branches and asks before anything risky.</p>
+              <LiveMascot id="app-empty" pose="idle" className="mx-auto mb-2 block h-24 w-24" />
+              <p className="font-display text-2xl font-bold">Hey, I&apos;m Zaprex. What are we building?</p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted">Ask me anything about your code, or give me a task: I work in my own cloud sandbox and hand you a draft pull request. I never push to protected branches and ask before anything risky.</p>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 {EXAMPLES.map(example => <button key={example} type="button" onClick={() => setDraft(example)} className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm hover:border-blue">{example}</button>)}
               </div>
             </div>
           )}
-          {state.messages.map(message => <ChatMessage key={message.id} message={message} />)}
+          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} />)}
+          {live && (
+            <>
+              <ChatMessage message={{ id: -1, role: "user", kind: "text", text: live.user, runId: null, approvalId: null, createdAt: "" }} />
+              <div className="flex justify-start" data-role="bot" data-testid="app-live-reply">
+                <div className="max-w-[85%] rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
+                  <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>
+                  {live.reply
+                    ? <p className="whitespace-pre-wrap break-words">{withoutTaskLine(live.reply)}<span aria-hidden className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-gold align-middle" /></p>
+                    : <p className="flex items-center gap-1.5 text-muted" aria-label="Zaprex is thinking"><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold" /><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:.15s]" /><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:.3s]" /></p>}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {pending.map(approval => (
@@ -224,10 +262,14 @@ export function ZaprexApp() {
         <form className="flex items-end gap-2 border-t border-line p-4" onSubmit={event => { event.preventDefault(); send(); }}>
           <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={2} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
             onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }}
-            placeholder="Give Zaprex a task. It works in the background and opens a draft PR…" aria-label="Task for Zaprex"
+            placeholder="Message Zaprex: ask anything, or give it a task…" aria-label="Message Zaprex"
             className="min-h-12 flex-1 resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-sm outline-none focus:border-blue" />
           <button type="submit" disabled={busy || !draft.trim() || !!locked} data-testid="app-send" className="btn-primary inline-flex h-12 items-center gap-2 rounded-full px-5 font-semibold text-white disabled:opacity-50">
             {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Send aria-hidden className="h-4 w-4" />} Send
+          </button>
+          <button type="button" disabled={busy || !draft.trim() || !!locked} onClick={() => { const task = draft.trim(); setDraft(""); startRun(task); }} title="Start a background run with this as the task" data-testid="app-run"
+            className="inline-flex h-12 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-semibold hover:border-blue disabled:opacity-50">
+            <Play aria-hidden className="h-4 w-4" /> Run
           </button>
         </form>
       </section>
@@ -238,7 +280,7 @@ export function ZaprexApp() {
             <h2 className="font-display text-lg font-bold">Runs</h2>
             <span className="text-xs text-muted">{running ? `${running} running` : "none running"}</span>
           </div>
-          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Send a task to start one.</p>}
+          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press Run, or Start run on a reply.</p>}
           <ul className="mt-3 space-y-2">
             {state.runs.slice(0, 8).map(run => {
               const active = isActive(run);
@@ -272,17 +314,24 @@ export function ZaprexApp() {
   );
 }
 
-function ChatMessage({ message }: { message: Message }) {
+function ChatMessage({ message, onRun }: { message: Message; onRun?: (task: string) => void }) {
   if (message.kind === "approval") {
     return <p className="flex items-center gap-2 text-xs text-muted"><ShieldAlert aria-hidden className="h-3.5 w-3.5 text-gold" /> {message.text}</p>;
   }
   const mine = message.role === "user";
   const pr = mine ? undefined : prLinkIn(message.text);
+  const task = mine ? undefined : taskIn(message.text);
   return (
     <div className={`flex ${mine ? "justify-end" : "justify-start"}`} data-role={message.role}>
       <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "bg-blue text-white" : "border border-line bg-surface"}`}>
         {!mine && <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>}
-        <p className="whitespace-pre-wrap break-words">{message.text}</p>
+        <p className="whitespace-pre-wrap break-words">{task ? withoutTaskLine(message.text) : message.text}</p>
+        {task && (
+          <button type="button" disabled={!onRun} onClick={() => onRun?.(task)} data-testid="app-start-run" title={task}
+            className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-navy disabled:opacity-50">
+            <Play aria-hidden className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">Start run: {task}</span>
+          </button>
+        )}
         {pr && <a href={pr} target="_blank" rel="noreferrer" data-testid="app-pr-link" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sky hover:underline"><GitPullRequestDraft aria-hidden className="h-3.5 w-3.5" /> Open draft PR</a>}
       </div>
     </div>

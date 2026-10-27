@@ -1,19 +1,20 @@
 /**
  * Zaprex animated mascot: a layered SVG (raster body + arm from the official artwork, vector eyes, lightning and
- * effects) with six states. Framework-free so the site, portal and IDE can all use it.
+ * effects) with seven states (idle always moves; talking is the liveliest). Framework-free so the site, portal and IDE can all use it.
  *
  *   el.innerHTML = zaprexMascotSvg({ body: "/mascot/zaprex-body-512.webp", arm: "/mascot/zaprex-arm-512.webp" });
  *   el.querySelector("svg").dataset.state = "working"; // idle | thinking | working | approval | done | error
  *
  * Motion stops automatically under prefers-reduced-motion (each state keeps a readable static pose).
  */
-export type ZaprexState = "idle" | "thinking" | "working" | "approval" | "done" | "error";
-export const ZAPREX_STATES: ZaprexState[] = ["idle", "thinking", "working", "approval", "done", "error"];
+export type ZaprexState = "idle" | "thinking" | "talking" | "working" | "approval" | "done" | "error";
+export const ZAPREX_STATES: ZaprexState[] = ["idle", "thinking", "talking", "working", "approval", "done", "error"];
 
 export const ZAPREX_MASCOT_CSS = `
 .zx-m{overflow:visible}
 .zx-m *{transform-box:view-box}
-.zx-m .zx-rig{transform-origin:380px 715px;animation:zx-breathe 3.6s ease-in-out infinite}
+.zx-m .zx-rig{transform-origin:380px 715px;animation:zx-idle 4.2s ease-in-out infinite}
+.zx-m[data-state=idle] .zx-pupil{animation:zx-glance 7s ease-in-out infinite}
 .zx-m .zx-arm{transform-origin:552px 494px;transition:transform .45s cubic-bezier(.3,1.6,.5,1)}
 .zx-m .zx-lid{transform:translateY(-80px);animation:zx-blink 4.8s infinite}
 .zx-m .zx-lowlid{transform:translateY(80px);transition:transform .35s ease}
@@ -53,12 +54,23 @@ export const ZAPREX_MASCOT_CSS = `
 .zx-m[data-state=done] .zx-spark:nth-child(3){animation-delay:.6s}
 .zx-m[data-state=done] .zx-spark:nth-child(4){animation-delay:.9s}
 .zx-m[data-state=done] .zx-bolt-glow{opacity:.7}
+/* talking (IDEA-177): nods along while it answers, gestures, lightning pulses, eyes follow the words */
+.zx-m[data-state=talking] .zx-rig{animation:zx-talk .95s ease-in-out infinite}
+.zx-m[data-state=talking] .zx-arm{animation:zx-gesture 1.9s ease-in-out infinite}
+.zx-m[data-state=talking] .zx-pupil{animation:zx-read 1.9s ease-in-out infinite}
+.zx-m[data-state=talking] .zx-bolt-glow{animation:zx-glow 1.1s ease-in-out infinite}
+.zx-m[data-state=talking] .zx-bolt-core{opacity:.9;animation:zx-run 1.6s linear infinite}
 /* error: sad, droopy lids, a tear, lightning out */
 .zx-m[data-state=error] .zx-rig{animation:none;transform:rotate(3deg) translateY(10px)}
 .zx-m[data-state=error] .zx-lid{animation:none;transform:translateY(-46px) rotate(-16deg)}
 .zx-m[data-state=error] .zx-pupil{transform:translate(-4px,10px)}
 .zx-m[data-state=error] .zx-rig image{filter:saturate(.35) brightness(.82)}
 .zx-m[data-state=error] .zx-tear{animation:zx-tear 2.2s ease-in infinite}
+@keyframes zx-idle{0%,100%{transform:translateY(0) rotate(0) scale(1,1)}25%{transform:translateY(-3px) rotate(-.8deg) scale(1.006,1.014)}50%{transform:translateY(0) rotate(0) scale(1.01,1.02)}75%{transform:translateY(-2px) rotate(.7deg) scale(1.004,1.01)}}
+@keyframes zx-glance{0%,70%,100%{transform:translate(0,0)}76%,84%{transform:translate(-8px,-3px)}88%,94%{transform:translate(6px,-2px)}}
+@keyframes zx-talk{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-12px) rotate(-2.4deg)}60%{transform:translateY(-2px) rotate(1.2deg)}80%{transform:translateY(-7px) rotate(-.8deg)}}
+@keyframes zx-gesture{0%,100%{transform:rotate(0)}35%{transform:rotate(-26deg)}65%{transform:rotate(-8deg)}}
+@keyframes zx-read{0%,100%{transform:translate(-7px,2px)}50%{transform:translate(7px,2px)}}
 @keyframes zx-breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.008,1.018)}}
 @keyframes zx-tilt{0%,100%{transform:rotate(0)}30%{transform:rotate(-2.2deg)}70%{transform:rotate(1.6deg)}}
 @keyframes zx-roar{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-26px) rotate(-4deg)}55%{transform:translateY(0) rotate(-1deg)}}
