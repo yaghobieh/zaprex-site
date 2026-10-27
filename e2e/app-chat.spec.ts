@@ -36,6 +36,42 @@ test.describe("Zaprex app: chat", () => {
     expect(bot.talkBodies[0]).toMatchObject({ text: "Hello Rex" });
   });
 
+  test("Hebrew messages and input lay out right to left (dir=auto)", async ({ page }) => {
+    await fakeBot(page, { replies: [answer("שלום! **זאפרקס** כאן.\n\n- פריט ראשון\n- second item")] });
+    await page.goto("/app");
+    const input = page.getByTestId("app-input");
+    await expect(input).toHaveAttribute("dir", "auto");
+    await input.fill("מה שלומך?");
+    expect(await input.evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+    await page.getByTestId("app-send").click();
+    const mine = page.locator('[data-testid="app-message"][data-role="user"]').last();
+    await expect(mine).toContainText("מה שלומך?");
+    expect(await mine.locator("p").first().evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+    const reply = page.locator('[data-testid="app-message"][data-role="bot"]').last();
+    await expect(reply).toContainText("פריט ראשון");
+    expect(await reply.locator("p").nth(1).evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+    // The list follows the message (Hebrew first), so its bullets sit on the right, English item included.
+    expect(await reply.locator("ul").evaluate(el => getComputedStyle(el).direction)).toBe("rtl");
+  });
+
+  test("a new deploy reloads an idle window on focus, or offers Reload when a draft is open", async ({ page }) => {
+    await fakeBot(page);
+    let live = "";
+    await page.route("**/api/version", async route => (live ? route.fulfill({ json: { build: live } }) : route.continue()));
+    await page.goto("/app");
+    await expect(page.getByTestId("zaprex-app")).toBeVisible();
+    await page.getByTestId("app-input").fill("half-written message");
+    live = "dpl_newer";
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect(page.getByTestId("app-update")).toBeVisible();
+    await expect(page.getByTestId("app-input")).toHaveValue("half-written message");
+    await page.reload();
+    await expect(page.getByTestId("zaprex-app")).toBeVisible();
+    const reloaded = page.waitForEvent("load");
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await reloaded;
+  });
+
   test("an empty reply shows an error with Retry, and Retry resends", async ({ page }) => {
     const bot = await fakeBot(page, { replies: [sse({ type: "start", model: "ingot" }), answer("Second try worked.")] });
     await page.goto("/app");

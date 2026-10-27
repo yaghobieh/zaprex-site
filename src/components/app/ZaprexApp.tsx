@@ -6,6 +6,7 @@ import { LiveMascot } from "@/components/app/LiveMascot";
 import { Markdown } from "@/components/app/Markdown";
 import { startSignIn, type AccountUser } from "@/lib/auth";
 import { initNativeApp } from "@/lib/native";
+import { useNewVersion } from "@/lib/version";
 import {
   ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, quotable, STATUS_LABELS, talk, taskIn, withoutTaskLine, withQuote,
   type Approval, type Chat, type Decision, type Feedback, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
@@ -87,6 +88,8 @@ export function ZaprexApp() {
   const poll = useRef<() => void>(() => undefined);
 
   useEffect(() => { initNativeApp(); }, []);
+  // IDEA-192: pick up a new deploy (desktop/phone windows stay open for days). Reload only when nothing would be lost.
+  const updated = useNewVersion(useCallback(() => !draft.trim() && !live && !busy && attachments.length === 0, [draft, live, busy, attachments.length]));
 
   useEffect(() => {
     let cancelled = false;
@@ -373,7 +376,7 @@ export function ZaprexApp() {
           </button>
           <LiveMascot id="app-head" pose={pose} className="-my-2 ml-1 h-10 w-10 shrink-0" />
           <div className="min-w-0 flex-1">
-            <h1 className="font-display truncate text-base font-bold leading-tight" data-testid="app-chat-title">{chatId ? chatTitle || "New chat" : "Zaprex"}</h1>
+            <h1 dir="auto" className="font-display truncate text-base font-bold leading-tight" data-testid="app-chat-title">{chatId ? chatTitle || "New chat" : "Zaprex"}</h1>
             <p className="truncate text-xs text-muted" data-testid="app-usage">
               {state.usage
                 ? `${state.usage.minutesUsed}${state.usage.minutesLimit ? ` / ${state.usage.minutesLimit}` : ""} min this month`
@@ -404,7 +407,7 @@ export function ZaprexApp() {
             <div className="zx-popover absolute left-2 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-2 shadow-xl" data-testid="app-chats-panel" role="dialog" aria-label="Search chats">
               <label className="flex items-center gap-2 rounded-xl border border-line px-3">
                 <Search aria-hidden className="h-4 w-4 text-muted" />
-                <input autoFocus value={chatQuery} onChange={event => setChatQuery(event.target.value)} placeholder="Search chats…" aria-label="Search chats" data-testid="app-chat-search"
+                <input dir="auto" autoFocus value={chatQuery} onChange={event => setChatQuery(event.target.value)} placeholder="Search chats…" aria-label="Search chats" data-testid="app-chat-search"
                   className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
               </label>
               <ul className="mt-2 max-h-80 overflow-y-auto">
@@ -418,7 +421,7 @@ export function ZaprexApp() {
                   <li key={chat.id}><button type="button" onClick={() => openChat(chat)} data-testid="app-chat-item" data-active={chat.id === chatId}
                     className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-bg-soft ${chat.id === chatId ? "font-semibold text-gold" : ""}`}>
                     <MessageSquare aria-hidden className="h-4 w-4 shrink-0 text-muted" />
-                    <span className="min-w-0 flex-1 truncate">{plainTitle(chat.title) || "New chat"}</span>
+                    <span dir="auto" className="min-w-0 flex-1 truncate text-start">{plainTitle(chat.title) || "New chat"}</span>
                     <span className="shrink-0 text-xs text-muted">{shortDate(chat.updatedAt)}</span>
                   </button></li>
                 ))}
@@ -437,7 +440,7 @@ export function ZaprexApp() {
                     <li key={run.id} className="rounded-xl border border-line" data-status={run.status}>
                       <div className="flex items-center gap-2 px-3 py-2">
                         <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${active ? "animate-pulse bg-sky" : run.status === "succeeded" ? "bg-emerald-400" : "bg-red-400"}`} />
-                        <button type="button" onClick={() => void toggleRun(run)} title={run.prompt} aria-expanded={openRun === run.id} className="min-w-0 flex-1 truncate text-left text-sm">{run.prompt}</button>
+                        <button type="button" onClick={() => void toggleRun(run)} title={run.prompt} aria-expanded={openRun === run.id} dir="auto" className="min-w-0 flex-1 truncate text-start text-sm">{run.prompt}</button>
                         {run.prUrl && <a href={run.prUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-sky">#{run.prNumber}</a>}
                         <span className="shrink-0 text-xs text-muted">{STATUS_LABELS[run.status]} · {formatMinutes(run.computeSeconds)}</span>
                         {active && (
@@ -455,6 +458,12 @@ export function ZaprexApp() {
           )}
         </div>
 
+        {updated && (
+          <p className="flex items-center justify-center gap-2 border-b border-line bg-gold/10 px-3 py-1.5 text-xs" role="status" data-testid="app-update">
+            Zaprex was updated.
+            <button type="button" onClick={() => window.location.reload()} className="font-semibold text-gold hover:underline" data-testid="app-update-reload">Reload</button>
+          </p>
+        )}
         <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5 sm:py-5" data-testid="app-thread" aria-live="polite">
           {!state.loaded && <p className="text-sm text-muted">Loading…</p>}
           {state.loaded && state.error && !state.entitlement && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
@@ -534,7 +543,7 @@ export function ZaprexApp() {
             {replyTo && (
               <div className="zx-chip mx-1.5 mb-1.5 mt-1 flex items-start gap-2 rounded-2xl border px-3 py-2 text-xs" data-testid="app-reply-chip">
                 <CornerUpLeft aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
-                <span className="min-w-0 flex-1"><span className="font-semibold">Replying to {replyTo.role === "bot" ? "Zaprex" : "yourself"}</span><span className="line-clamp-2 text-muted">{replyTo.text}</span></span>
+                <span className="min-w-0 flex-1"><span className="font-semibold">Replying to {replyTo.role === "bot" ? "Zaprex" : "yourself"}</span><span dir="auto" className="line-clamp-2 block text-muted">{replyTo.text}</span></span>
                 <button type="button" onClick={() => setReplyTo(undefined)} aria-label="Cancel reply" title="Cancel reply" data-testid="app-reply-cancel" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-black/40 text-white hover:bg-black/60"><X aria-hidden className="h-3 w-3" /></button>
               </div>
             )}
@@ -559,7 +568,7 @@ export function ZaprexApp() {
                 className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition disabled:opacity-40">
                 <Plus aria-hidden className="h-5 w-5" />
               </button>
-              <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={1} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
+              <textarea dir="auto" value={draft} onChange={event => setDraft(event.target.value)} rows={1} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
                 onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }}
                 onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); void addFiles(files); } }}
                 placeholder={taskMode ? "Describe the task: Zaprex opens a draft PR…" : "Ask Zaprex anything…"} aria-label="Message Zaprex"
@@ -622,7 +631,7 @@ function ChatMessage({ message, onRun, onReply, onFeedback, avatar }: { message:
     {asking && onFeedback && (
       <form className="ml-12 flex max-w-[85%] items-center gap-2" data-testid="app-feedback-form"
         onSubmit={event => { event.preventDefault(); if (reason.trim()) onFeedback(message, -1, reason.trim()); setAsking(false); }}>
-        <input autoFocus value={reason} onChange={event => setReason(event.target.value)} maxLength={300} placeholder="What went wrong? (optional)" aria-label="What went wrong?" data-testid="app-feedback-reason"
+        <input dir="auto" autoFocus value={reason} onChange={event => setReason(event.target.value)} maxLength={300} placeholder="What went wrong? (optional)" aria-label="What went wrong?" data-testid="app-feedback-reason"
           className="h-8 min-w-0 flex-1 rounded-full border border-line bg-surface px-3 text-xs outline-none focus:border-gold" />
         <button type="submit" data-testid="app-feedback-send" className="h-8 rounded-full bg-gold px-3 text-xs font-semibold text-navy">Send</button>
         <button type="button" onClick={() => setAsking(false)} className="h-8 rounded-full px-2 text-xs text-muted hover:text-ink">Skip</button>
