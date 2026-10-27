@@ -63,3 +63,16 @@ test("desktop handoff page and app links exist", async ({ request }) => {
     expect(response.status(), path).toBeLessThan(500);
   }
 });
+
+test("/pricing redirects to the Ingot plans page", async ({ request }) => {
+  const response = await request.get("/pricing", { maxRedirects: 0 });
+  expect([307, 308]).toContain(response.status());
+  expect(response.headers()["location"]).toBe("https://ingot-portal.vercel.app/pricing");
+});
+
+test("/api/version answers the build id, never cached", async ({ request }) => {
+  const response = await request.get("/api/version");
+  expect(response.status()).toBe(200);
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  expect(typeof (await response.json()).build).toBe("string");
+});
