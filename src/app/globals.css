@@ -270,3 +270,12 @@ html[data-theme="dark"]:has(.zx-app-surface) { background: #0e0f12; }
 }
 @keyframes zx-shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
 @media (prefers-reduced-motion: reduce) { .zx-activity { animation: none; color: var(--muted); } }
+
+/* IDEA-187: chat Markdown */
+.zx-md strong { font-weight: 700; }
+.zx-inline-code { background: rgba(18, 26, 51, 0.08); }
+[data-theme="dark"] .zx-inline-code { background: rgba(255, 255, 255, 0.1); }
+.zx-quote { border-color: var(--gold); }
+.zx-mine a { color: #fff; text-decoration: underline; }
+.zx-mine .zx-inline-code { background: rgba(255, 255, 255, 0.18); }
+.zx-mine .zx-quote { border-color: rgba(255, 255, 255, 0.7); }

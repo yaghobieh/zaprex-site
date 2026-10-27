@@ -122,6 +122,7 @@ export function mascotPose(runs: readonly Run[], now = Date.now()): Pose {
 export type TalkEvent =
   | { type: "start"; model: string }
   | { type: "text"; text: string }
+  | { type: "search"; query: string }
   | { type: "done"; task: string | null; usage: { inputTokens: number; outputTokens: number } | null }
   | { type: "error"; code: string };
 
@@ -130,13 +131,13 @@ export const TASK_LINE = /^TASK:\s*(.+)$/m;
 export const withoutTaskLine = (text: string): string => text.replace(TASK_LINE, "").trim();
 export const taskIn = (text: string): string | undefined => TASK_LINE.exec(text)?.[1]?.trim();
 
-export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal, attachments: unknown[] = []): Promise<ApiResponse | undefined> {
+export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal, attachments: unknown[] = [], replyTo?: string): Promise<ApiResponse | undefined> {
   let response: Response;
   try {
     response = await fetch(`${BOT_API}/talk`, {
       method: "POST", credentials: "same-origin", cache: "no-store", signal,
       headers: { "content-type": "application/json", accept: "text/event-stream" },
-      body: JSON.stringify(attachments.length ? { text, repoId, attachments } : { text, repoId }),
+      body: JSON.stringify({ text, repoId, ...(attachments.length ? { attachments } : {}), ...(replyTo ? { replyTo: { text: replyTo } } : {}) }),
     });
   } catch {
     return { status: 0, body: {} };
@@ -196,3 +197,10 @@ export function activityFor(run: Run | undefined, event: RunEvent | undefined): 
     default: return "Thinking";
   }
 }
+
+/** Reply-to (IDEA-187): the text worth quoting from a message (no earlier quote, task line or source list). */
+export function quotable(text: string, max = 2_000): string {
+  return withoutTaskLine(text).replace(/\n*\*\*Sources\*\*[\s\S]*$/, "").split("\n").filter(line => !line.startsWith(">")).join("\n").trim().slice(0, max);
+}
+/** The quote as a Markdown blockquote above the message, the same shape the server stores. */
+export const withQuote = (text: string, quote: string | undefined): string => (quote ? `${quote.split("\n").map(line => `> ${line}`).join("\n")}\n\n${text}` : text);
