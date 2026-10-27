@@ -22,7 +22,8 @@ function savedPref(): Pref {
   return value === "light" || value === "system" ? value : "dark";
 }
 
-export function ThemeToggle() {
+/** `compact` (IDEA-193): one round button that cycles Dark, Light, System, for the phone app bar. */
+export function ThemeToggle({ compact = false }: { compact?: boolean } = {}) {
   const [pref, setPref] = useState<Pref | null>(null);
 
   useEffect(() => {
@@ -45,6 +46,17 @@ export function ThemeToggle() {
     if (value === "dark") localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, value);
   };
+
+  if (compact) {
+    const current = OPTIONS.find(option => option.value === (pref ?? "dark")) ?? OPTIONS[1];
+    const next = OPTIONS[(OPTIONS.indexOf(current) + 1) % OPTIONS.length];
+    return (
+      <button type="button" onClick={() => choose(next.value)} title={`Theme: ${current.label} (tap for ${next.label})`} aria-label={`Theme: ${current.label}. Switch to ${next.label}`} data-testid="theme-cycle"
+        className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted transition hover:text-ink">
+        <current.Icon aria-hidden className="h-4 w-4" />
+      </button>
+    );
+  }
 
   return (
     <div role="radiogroup" aria-label="Theme" className="flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5">

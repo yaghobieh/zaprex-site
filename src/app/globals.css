@@ -288,3 +288,13 @@ html[data-theme="dark"]:has(.zx-app-surface) { background: #0e0f12; }
 /* IDEA-191: /app is a full-height app shell. Only the message list scrolls; no page scroll or rubber-banding. */
 html:has(.zx-app-shell), html:has(.zx-app-shell) body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 [data-native] body { -webkit-tap-highlight-color: transparent; }
+
+/* IDEA-193: phones get one compact bar and an edge-to-edge chat (no card frame inside the page frame). */
+@media (max-width: 639px) {
+  html[data-zx-chat] .zx-site-bar { display: none; }
+  .zx-app-surface .zx-chat-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .zx-app-surface .zx-chat-bar { background: var(--surface); }
+}
+html:has(.zx-app-shell) { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.zx-md { overflow-wrap: anywhere; }
+.zx-bubble pre, .zx-bubble table { max-width: 100%; }
