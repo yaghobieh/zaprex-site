@@ -72,6 +72,30 @@ test.describe("Zaprex app: chat", () => {
     await reloaded;
   });
 
+  test("phone: one compact bar, Zaprex replies full width, composer pinned, no sideways scroll @mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await fakeBot(page, { replies: [answer("**הספריות:** `@forgedevstack/bear` and https://www.npmjs.com/search?q=scope%3Aforgedevstack-a-very-long-link-that-must-wrap\n\n```\nconst a_really_long_line_of_code = 'that scrolls inside its own block, never the page';\n```")] });
+    await page.goto("/app");
+    await page.getByTestId("app-input").fill("מה יש?");
+    await page.getByTestId("app-send").click();
+    const bot = page.locator('[data-testid="app-message"][data-role="bot"]').last();
+    await expect(bot).toContainText("הספריות");
+    await expect(page.locator(".zx-site-bar")).toBeHidden();
+    await expect(page.getByTestId("app-bar-account")).toBeVisible();
+    const m = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      pageScroll: document.documentElement.scrollHeight - window.innerHeight,
+      bubble: [...document.querySelectorAll('[data-testid="app-message"][data-role="bot"] .zx-bubble')].at(-1)!.getBoundingClientRect().width,
+      composer: document.querySelector('[data-testid="app-composer"]')!.getBoundingClientRect().bottom,
+      height: window.innerHeight,
+    }));
+    expect(m.overflow, "horizontal scroll").toBeLessThanOrEqual(1);
+    expect(m.pageScroll, "page scroll").toBeLessThanOrEqual(1);
+    expect(m.bubble).toBeGreaterThan(375 * 0.9);
+    expect(m.composer).toBeLessThanOrEqual(m.height);
+    expect(m.composer).toBeGreaterThan(m.height - 40);
+  });
+
   test("an empty reply shows an error with Retry, and Retry resends", async ({ page }) => {
     const bot = await fakeBot(page, { replies: [sse({ type: "start", model: "ingot" }), answer("Second try worked.")] });
     await page.goto("/app");

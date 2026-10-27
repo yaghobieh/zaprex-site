@@ -18,7 +18,7 @@ export default function AppPage() {
     <div className="zx-app-surface zx-app-shell flex h-dvh flex-col overflow-hidden">
       <div aria-hidden className="space-bg pointer-events-none fixed inset-0 -z-10" />
       <div aria-hidden className="docs-nebula pointer-events-none fixed inset-0 -z-10" />
-      <header className="glass-bar z-40 shrink-0 pt-[env(safe-area-inset-top)]">
+      <header className="zx-site-bar glass-bar z-40 shrink-0 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:h-16 sm:gap-4 sm:px-5">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Zaprex home">
             <ZaprexMascot id="app-nav" className="-my-1 h-10 w-10" decorative />

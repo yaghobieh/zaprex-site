@@ -2,7 +2,9 @@
 
 import { Activity, ArrowUp, Check, Copy, CornerUpLeft, FileText, GitPullRequestDraft, Loader2, MessageSquare, Mic, Play, Plus, RefreshCw, Search, ShieldAlert, Square, SquarePen, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AccountButton } from "@/components/AccountButton";
 import { LiveMascot } from "@/components/app/LiveMascot";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Markdown } from "@/components/app/Markdown";
 import { startSignIn, type AccountUser } from "@/lib/auth";
 import { initNativeApp } from "@/lib/native";
@@ -49,6 +51,19 @@ function Thumb({ src, alt, className, testId }: { src: string; alt: string; clas
   return <img src={src} alt={alt} className={className} data-testid={testId} />;
 }
 
+/** True below the `sm` breakpoint (IDEA-193), where the chat header also carries the theme and account buttons. */
+function usePhone(): boolean {
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const sync = () => setPhone(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+  return phone;
+}
+
 /** A reply being streamed right now (IDEA-177). */
 interface Live { user: string; reply: string; phase: "thinking" | "talking"; attachments: Attachment[]; search?: string }
 /** The message being replied to (IDEA-187). */
@@ -88,6 +103,13 @@ export function ZaprexApp() {
   const poll = useRef<() => void>(() => undefined);
 
   useEffect(() => { initNativeApp(); }, []);
+  const phone = usePhone();
+  // IDEA-193: on phones the chat header is the only bar once signed in (the site bar stays for loading and sign-in).
+  useEffect(() => {
+    if (session.kind !== "signed-in") return;
+    document.documentElement.dataset.zxChat = "";
+    return () => { delete document.documentElement.dataset.zxChat; };
+  }, [session.kind]);
   // IDEA-192: pick up a new deploy (desktop/phone windows stay open for days). Reload only when nothing would be lost.
   const updated = useNewVersion(useCallback(() => !draft.trim() && !live && !busy && attachments.length === 0, [draft, live, busy, attachments.length]));
 
@@ -363,9 +385,9 @@ export function ZaprexApp() {
   const running = state.runs.filter(isActive).length;
 
   return (
-    <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-4xl flex-1 flex-col px-0 pt-0 pb-[env(safe-area-inset-bottom)] sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-3" data-testid="zaprex-app">
-      <section className="glass flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sm:rounded-3xl" aria-label="Chat with Zaprex">
-        <div className="relative flex items-center gap-2 border-b border-line px-3 py-2.5 sm:px-4" ref={panelRef}>
+    <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-4xl flex-1 flex-col overflow-x-hidden px-0 pt-0 pb-[env(safe-area-inset-bottom)] sm:overflow-visible sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-3" data-testid="zaprex-app">
+      <section className="zx-chat-card glass flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sm:rounded-3xl" aria-label="Chat with Zaprex">
+        <div className="zx-chat-bar relative flex items-center gap-1.5 border-b border-line pb-2 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[calc(0.5rem+env(safe-area-inset-top))] sm:gap-2 sm:px-4 sm:py-2.5" ref={panelRef} data-testid="app-bar">
           <button type="button" onClick={newChat} disabled={busy || !!locked} title="New chat" aria-label="New chat" data-testid="app-new-chat"
             className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:text-gold disabled:opacity-40">
             <SquarePen aria-hidden className="h-[18px] w-[18px]" />
@@ -374,8 +396,8 @@ export function ZaprexApp() {
             className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:text-gold">
             <Search aria-hidden className="h-[18px] w-[18px]" />
           </button>
-          <LiveMascot id="app-head" pose={pose} className="-my-2 ml-1 h-10 w-10 shrink-0" />
-          <div className="min-w-0 flex-1">
+          <LiveMascot id="app-head" pose={pose} className="-my-2 ml-1 hidden h-10 w-10 shrink-0 sm:block" />
+          <div className="min-w-0 flex-1 pl-1 sm:pl-0">
             <h1 dir="auto" className="font-display truncate text-base font-bold leading-tight" data-testid="app-chat-title">{chatId ? chatTitle || "New chat" : "Zaprex"}</h1>
             <p className="truncate text-xs text-muted" data-testid="app-usage">
               {state.usage
@@ -399,16 +421,23 @@ export function ZaprexApp() {
               {state.repos.map(repo => <option key={repo.id} value={repo.id}>{repo.fullName}</option>)}
             </select>
           )}
-          <button type="button" onClick={() => void refresh()} title="Refresh" aria-label="Refresh" className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full">
+          <button type="button" onClick={() => void refresh()} title="Refresh" aria-label="Refresh" className="zx-round hidden h-9 w-9 shrink-0 place-items-center rounded-full sm:grid">
             <RefreshCw aria-hidden className="h-4 w-4" />
           </button>
+
+          {phone && (
+            <div className="flex shrink-0 items-center gap-1 sm:hidden" data-testid="app-bar-account">
+              <ThemeToggle compact />
+              <AccountButton />
+            </div>
+          )}
 
           {panel === "chats" && (
             <div className="zx-popover absolute left-2 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-2 shadow-xl" data-testid="app-chats-panel" role="dialog" aria-label="Search chats">
               <label className="flex items-center gap-2 rounded-xl border border-line px-3">
                 <Search aria-hidden className="h-4 w-4 text-muted" />
                 <input dir="auto" autoFocus value={chatQuery} onChange={event => setChatQuery(event.target.value)} placeholder="Search chats…" aria-label="Search chats" data-testid="app-chat-search"
-                  className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
+                  className="h-9 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted sm:text-sm" />
               </label>
               <ul className="mt-2 max-h-80 overflow-y-auto">
                 {!chatQuery.trim() && (
@@ -464,7 +493,7 @@ export function ZaprexApp() {
             <button type="button" onClick={() => window.location.reload()} className="font-semibold text-gold hover:underline" data-testid="app-update-reload">Reload</button>
           </p>
         )}
-        <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5 sm:py-5" data-testid="app-thread" aria-live="polite">
+        <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 py-3 sm:px-5 sm:py-5" data-testid="app-thread" aria-live="polite">
           {!state.loaded && <p className="text-sm text-muted">Loading…</p>}
           {state.loaded && state.error && !state.entitlement && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
           {state.loaded && locked && (
@@ -495,8 +524,8 @@ export function ZaprexApp() {
               )}
               {live.user && <ChatMessage message={{ id: -1, role: "user", kind: "text", text: live.user, runId: null, approvalId: null, createdAt: "" }} />}
               <div className="flex items-end justify-start gap-2" data-role="bot" data-testid="app-live-reply">
-                <LiveMascot id="app-avatar-live" pose={live.phase} testId="app-avatar" className="-mb-1 h-10 w-10 shrink-0" />
-                <div className="max-w-[85%] rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
+                <LiveMascot id="app-avatar-live" pose={live.phase} testId="app-avatar" className="-mb-1 hidden h-10 w-10 shrink-0 sm:block" />
+                <div className="zx-bubble w-full min-w-0 rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-[15px] sm:w-auto sm:max-w-[85%] sm:px-4 sm:text-sm">
                   <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>
                   {live.reply
                     ? <div><Markdown text={withoutTaskLine(live.reply)} /><span aria-hidden className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-gold align-middle" /></div>
@@ -531,10 +560,10 @@ export function ZaprexApp() {
             )}
           </div>
         )}
-        <div className="px-3 pb-3 pt-1 sm:px-4">
-          <div className="flex h-7 items-center gap-2 px-2 text-sm" aria-live="polite" data-testid="app-status">
-            <LiveMascot id="app-status" pose={live ? live.phase : pose} testId="app-status-mascot" className="h-7 w-7 shrink-0" />
-            <span className={activity ? "zx-activity text-muted" : "text-muted/70"}>{activity ?? (locked ? "Zaprex is locked on this plan" : "Ready when you are")}</span>
+        <div className="px-2 pb-2 pt-1 sm:px-4 sm:pb-3">
+          <div className="flex h-6 items-center gap-2 px-2 text-xs sm:h-7 sm:text-sm" aria-live="polite" data-testid="app-status">
+            <LiveMascot id="app-status" pose={live ? live.phase : pose} testId="app-status-mascot" className="h-6 w-6 shrink-0 sm:h-7 sm:w-7" />
+            <span className={`min-w-0 truncate ${activity ? "zx-activity text-muted" : "text-muted/70"}`}>{activity ?? (locked ? "Zaprex is locked on this plan" : "Ready when you are")}</span>
           </div>
           <form className={`zx-composer mt-1 rounded-[28px] border p-1.5 transition ${dragging ? "zx-dropping" : ""}`} onSubmit={event => { event.preventDefault(); submit(); }} data-testid="app-composer"
             onDragOver={event => { if (event.dataTransfer.types.includes("Files") && !locked) { event.preventDefault(); setDragging(true); } }}
@@ -561,7 +590,7 @@ export function ZaprexApp() {
                 ))}
               </ul>
             )}
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-1 sm:gap-2">
               <input ref={picker} type="file" multiple accept={ACCEPT} hidden data-testid="app-file-input" onChange={event => { void addFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
               <button type="button" onClick={() => picker.current?.click()} disabled={!!locked || taskMode} data-testid="app-plus"
                 title={taskMode ? "Attachments are for chat messages" : "Attach files or images"} aria-label="Attach files or images"
@@ -572,11 +601,11 @@ export function ZaprexApp() {
                 onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }}
                 onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); void addFiles(files); } }}
                 placeholder={taskMode ? "Describe the task: Zaprex opens a draft PR…" : "Ask Zaprex anything…"} aria-label="Message Zaprex"
-                className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-[15px] leading-5 outline-none [field-sizing:content] placeholder:text-muted" />
+                className="max-h-40 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-base leading-5 outline-none [field-sizing:content] placeholder:truncate placeholder:text-muted sm:text-[15px]" />
               <button type="button" onClick={() => setTaskMode(on => !on)} aria-pressed={taskMode} disabled={!!locked || attachments.length > 0} data-testid="app-task-toggle"
                 title={attachments.length ? "Remove attachments to start a task" : taskMode ? "Back to chat" : "Run as a background task (draft PR)"}
-                className={`mb-1 inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition disabled:opacity-40 ${taskMode ? "border-gold bg-gold text-navy" : "border-line text-muted hover:text-gold"}`}>
-                <Play aria-hidden className="h-3 w-3" /> Task
+                aria-label="Task mode" className={`mb-1 inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 text-xs font-semibold transition disabled:opacity-40 sm:px-2.5 ${taskMode ? "border-gold bg-gold text-navy" : "border-line text-muted hover:text-gold"}`}>
+                <Play aria-hidden className="h-3 w-3" /> <span className="max-[420px]:sr-only">Task</span>
               </button>
               {canDictate && (
                 <button type="button" onClick={toggleDictation} disabled={!!locked} aria-pressed={listening} title={listening ? "Stop dictation" : "Dictate"} aria-label="Dictate" data-testid="app-mic"
@@ -609,9 +638,10 @@ function ChatMessage({ message, onRun, onReply, onFeedback, avatar }: { message:
   return (
     <>
     <div className={`group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role} data-testid="app-message" data-feedback={message.feedback ?? undefined}>
-      {!mine && (avatar ?? <span aria-hidden className="w-10 shrink-0" />)}
-      {mine && onReply && <MessageActions message={message} onReply={onReply} />}
-      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "zx-mine bg-blue text-white" : "border border-line bg-surface"}`}>
+      {!mine && <span className="hidden shrink-0 sm:block">{avatar ?? <span aria-hidden className="block w-10" />}</span>}
+      {/* IDEA-193: phones stack the actions under the bubble so the bubble gets the width; Zaprex's replies go full width. */}
+      <div className={`flex min-w-0 flex-col gap-1 sm:flex-row sm:items-end sm:gap-2 ${mine ? "max-w-[85%] items-end sm:max-w-[92%] sm:flex-row-reverse" : "w-full items-start sm:w-auto sm:max-w-[92%]"}`}>
+      <div className={`zx-bubble min-w-0 max-w-full rounded-2xl py-2.5 text-[15px] sm:text-sm ${mine ? "zx-mine bg-blue px-3.5 text-white sm:px-4" : "w-full border border-line bg-surface px-3.5 sm:w-auto sm:px-4"}`}>
         {!mine && <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>}
         <Markdown text={task ? withoutTaskLine(message.text) : message.text} />
         {task && (
@@ -622,17 +652,18 @@ function ChatMessage({ message, onRun, onReply, onFeedback, avatar }: { message:
         )}
         {pr && <a href={pr} target="_blank" rel="noreferrer" data-testid="app-pr-link" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sky hover:underline"><GitPullRequestDraft aria-hidden className="h-3.5 w-3.5" /> Open draft PR</a>}
       </div>
-      {!mine && onReply && <MessageActions message={message} onReply={onReply} onFeedback={onFeedback && message.id > 0 ? (value) => {
+      {onReply && <MessageActions message={message} onReply={onReply} onFeedback={!mine && onFeedback && message.id > 0 ? (value) => {
         onFeedback(message, value);
         setAsking(value === -1);
         setReason("");
       } : undefined} />}
+      </div>
     </div>
     {asking && onFeedback && (
-      <form className="ml-12 flex max-w-[85%] items-center gap-2" data-testid="app-feedback-form"
+      <form className="flex items-center gap-2 sm:ml-12 sm:max-w-[85%]" data-testid="app-feedback-form"
         onSubmit={event => { event.preventDefault(); if (reason.trim()) onFeedback(message, -1, reason.trim()); setAsking(false); }}>
         <input dir="auto" autoFocus value={reason} onChange={event => setReason(event.target.value)} maxLength={300} placeholder="What went wrong? (optional)" aria-label="What went wrong?" data-testid="app-feedback-reason"
-          className="h-8 min-w-0 flex-1 rounded-full border border-line bg-surface px-3 text-xs outline-none focus:border-gold" />
+          className="h-8 min-w-0 flex-1 rounded-full border border-line bg-surface px-3 text-base outline-none focus:border-gold sm:text-xs" />
         <button type="submit" data-testid="app-feedback-send" className="h-8 rounded-full bg-gold px-3 text-xs font-semibold text-navy">Send</button>
         <button type="button" onClick={() => setAsking(false)} className="h-8 rounded-full px-2 text-xs text-muted hover:text-ink">Skip</button>
       </form>
@@ -645,14 +676,15 @@ function ChatMessage({ message, onRun, onReply, onFeedback, avatar }: { message:
 function MessageActions({ message, onReply, onFeedback }: { message: Message; onReply: (message: Message) => void; onFeedback?: (value: Feedback | 0) => void }) {
   const [copied, setCopied] = useState(false);
   const base = "grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-gold focus-visible:opacity-100";
-  const hidden = "opacity-0 group-hover:opacity-100";
+  // Phones have no hover: the actions stay faintly visible under the bubble there.
+  const hidden = "opacity-0 group-hover:opacity-100 max-sm:opacity-60";
   const liked = message.feedback === 1;
   const disliked = message.feedback === -1;
   async function copy() {
     try { await navigator.clipboard.writeText(withoutTaskLine(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
   }
   return (
-    <div className={`mb-1 flex shrink-0 items-center gap-1 ${message.role === "user" ? "flex-row-reverse" : ""}`} data-testid="app-message-actions">
+    <div className={`flex shrink-0 items-center gap-1 sm:mb-1 ${message.role === "user" ? "flex-row-reverse" : ""}`} data-testid="app-message-actions">
       <button type="button" onClick={() => onReply(message)} title="Reply" aria-label="Reply to this message" data-testid="app-reply" className={`${base} ${hidden}`}>
         <CornerUpLeft aria-hidden className="h-3.5 w-3.5" />
       </button>

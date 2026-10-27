@@ -18,7 +18,7 @@ const COMPONENTS: Components = {
   h3: ({ children }) => <p dir="auto" className="mb-1 mt-2 font-semibold">{children}</p>,
   blockquote: ({ children }) => <blockquote className="zx-quote my-1.5 border-s-2 ps-2.5 opacity-80" data-testid="app-quote">{children}</blockquote>,
   pre: ({ children }) => <pre dir="ltr" className="zx-code my-2 max-w-full overflow-x-auto rounded-xl p-3 text-xs leading-relaxed text-white/90">{children}</pre>,
-  code: ({ className, children }) => (className ? <code className={className}>{children}</code> : <code className="zx-inline-code rounded px-1 py-0.5 text-[0.85em]">{children}</code>),
+  code: ({ className, children }) => (className ? <code className={className}>{children}</code> : <code dir="ltr" className="zx-inline-code rounded px-1 py-0.5 text-[0.85em]">{children}</code>),
   table: ({ children }) => <div className="my-2 overflow-x-auto"><table className="w-full border-collapse text-xs">{children}</table></div>,
   th: ({ children }) => <th className="border-b border-line px-2 py-1 text-start font-semibold">{children}</th>,
   td: ({ children }) => <td className="border-b border-line/60 px-2 py-1 align-top">{children}</td>,
