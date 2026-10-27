@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowUp, CornerUpLeft, ExternalLink, FileText, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square, X } from "lucide-react";
+import { Activity, ArrowUp, Check, Copy, CornerUpLeft, FileText, GitPullRequestDraft, Loader2, MessageSquare, Mic, Play, Plus, RefreshCw, Search, ShieldAlert, Square, SquarePen, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
 import { Markdown } from "@/components/app/Markdown";
-import { startSignIn, ZAPREX_DASHBOARD_URL, type AccountUser } from "@/lib/auth";
+import { startSignIn, type AccountUser } from "@/lib/auth";
 import {
   ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, quotable, STATUS_LABELS, talk, taskIn, withoutTaskLine, withQuote,
-  type Approval, type Decision, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
+  type Approval, type Chat, type Decision, type Feedback, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
 } from "@/lib/bot";
 import { INGOT } from "@/lib/site";
 import { ACCEPT, MAX_ATTACHMENTS, MAX_TOTAL_BYTES, bytesOf, formatSize, payloadOf, readAttachment, type Attachment } from "@/lib/attachments";
@@ -72,6 +72,13 @@ export function ZaprexApp() {
   const [dragging, setDragging] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyTo>();
   const [failedTalk, setFailedTalk] = useState<Failed>();
+  /** IDEA-189: "" is the original thread; otherwise a chat from New chat. */
+  const [chatId, setChatId] = useState("");
+  const [chatTitle, setChatTitle] = useState("");
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [panel, setPanel] = useState<"chats" | "runs">();
+  const [chatQuery, setChatQuery] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const recognition = useRef<Recognition | undefined>(undefined);
   const thread = useRef<HTMLDivElement>(null);
@@ -89,7 +96,10 @@ export function ZaprexApp() {
 
   const refresh = useCallback(async () => {
     clearTimeout(timer.current);
-    const chatPath = `/chat${repoId ? `?repoId=${encodeURIComponent(repoId)}` : ""}`;
+    const params = new URLSearchParams();
+    if (repoId) params.set("repoId", repoId);
+    if (chatId) params.set("chatId", chatId);
+    const chatPath = `/chat${params.size ? `?${params}` : ""}`;
     const [status, usage, repos, chat, approvals, runs] = await Promise.all([
       botApi("GET", "/status"), botApi("GET", "/usage"), botApi("GET", "/repos"), botApi("GET", chatPath), botApi("GET", "/approvals"), botApi("GET", "/runs?limit=20"),
     ]);
@@ -113,7 +123,28 @@ export function ZaprexApp() {
     });
     const active = runs.status === 200 && ((runs.body.runs as Run[] | undefined) ?? []).some(isActive);
     timer.current = setTimeout(() => poll.current(), active ? ACTIVE_POLL_MS : IDLE_POLL_MS);
-  }, [repoId]);
+  }, [repoId, chatId]);
+
+  /** Past chats (IDEA-189), searched on the server by title or message text. */
+  const loadChats = useCallback(async (q: string) => {
+    const response = await botApi("GET", `/chats${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+    if (response.status === 200) setChats((response.body.chats as Chat[] | undefined) ?? []);
+  }, []);
+
+  useEffect(() => {
+    if (panel !== "chats") return;
+    const wait = setTimeout(() => void loadChats(chatQuery), 200);
+    return () => clearTimeout(wait);
+  }, [panel, chatQuery, loadChats]);
+
+  useEffect(() => {
+    if (!panel) return;
+    const close = (event: MouseEvent) => { if (!panelRef.current?.contains(event.target as Node)) setPanel(undefined); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setPanel(undefined); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
+  }, [panel]);
 
   useEffect(() => {
     poll.current = () => void refresh();
@@ -215,7 +246,8 @@ export function ZaprexApp() {
         if (event.type === "text") setLive(current => current && { ...current, reply: current.reply + event.text, phase: "talking" });
         if (event.type === "search") setLive(current => current && { ...current, search: event.query });
         if (event.type === "error") failed = errorText({ status: 502, body: { error: event.code } });
-      }, undefined, payloadOf(files), quote);
+      }, undefined, payloadOf(files), quote, chatId || undefined);
+      if (chatId && !chatTitle) setChatTitle(plainTitle(prompt));
       if (response) failed = errorText(response);
       // IDEA-188: a turn that ends without any answer is an error with Retry, never a silent drop.
       if (!failed && (!answered || !finished)) failed = errorText({ status: 502, body: { error: answered ? "upstream_stream_failed" : "empty_reply" } });
@@ -227,10 +259,47 @@ export function ZaprexApp() {
     })();
   }
 
+  /** New chat (IDEA-189): an empty chat; the original thread stays one click away in Search. */
+  function newChat() {
+    if (busy) return;
+    void act(async () => {
+      const response = await botApi("POST", "/chats", { repoId: repoId || null });
+      if (response.status !== 201) return errorText(response);
+      const chat = response.body.chat as Chat;
+      setPanel(undefined);
+      setReplyTo(undefined);
+      setFailedTalk(undefined);
+      setState(previous => ({ ...previous, messages: [] }));
+      setChatTitle("");
+      setChatId(chat.id);
+      return "";
+    });
+  }
+
+  function openChat(chat?: Chat) {
+    setPanel(undefined);
+    setReplyTo(undefined);
+    setFailedTalk(undefined);
+    setActionError("");
+    setState(previous => ({ ...previous, messages: [] }));
+    setChatTitle(plainTitle(chat?.title ?? ""));
+    setChatId(chat?.id ?? "");
+  }
+
+  /** Thumbs up/down (IDEA-189): toggles, saved on the server; a thumbs-down can carry a short reason. */
+  async function giveFeedback(message: Message, value: Feedback | 0, reason?: string) {
+    const previous = { feedback: message.feedback ?? null, feedbackReason: message.feedbackReason ?? null };
+    const patch = (feedback: Feedback | null, feedbackReason: string | null) =>
+      setState(current => ({ ...current, messages: current.messages.map(other => (other.id === message.id ? { ...other, feedback, feedbackReason } : other)) }));
+    patch(value === 0 ? null : value, value === -1 ? reason ?? null : null);
+    const response = await botApi("PUT", `/messages/${message.id}/feedback`, { value, ...(reason ? { reason } : {}) });
+    if (response.status !== 200) { patch(previous.feedback, previous.feedbackReason); setActionError(errorText(response)); }
+  }
+
   /** Starts a background run (draft PR) for a task Zaprex proposed or the user typed. */
   function startRun(task: string) {
     void act(async () => {
-      const response = await botApi("POST", "/chat", { text: task, repoId: repoId || null });
+      const response = await botApi("POST", "/chat", { text: task, repoId: repoId || null, ...(chatId ? { chatId } : {}) });
       await refresh();
       return response.status === 200 || response.status === 201 ? "" : errorText(response);
     });
@@ -288,32 +357,99 @@ export function ZaprexApp() {
   const running = state.runs.filter(isActive).length;
 
   return (
-    <div className="mx-auto grid w-full min-w-0 max-w-7xl flex-1 grid-cols-1 gap-5 px-3 pb-6 pt-4 sm:px-4 lg:grid-cols-[minmax(0,1fr)_340px]" data-testid="zaprex-app">
-      <section className="glass flex h-[calc(100dvh-6.5rem)] min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-3xl" aria-label="Chat with Zaprex">
-        <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-5">
-          <LiveMascot id="app-head" pose={pose} className="-my-2 h-12 w-12" />
-          <div className="min-w-0">
-            <h1 className="font-display text-lg font-bold leading-tight">Zaprex</h1>
-            <p className="text-xs text-muted" data-testid="app-usage">
+    <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col px-2 pb-4 pt-3 sm:px-4" data-testid="zaprex-app">
+      <section className="glass flex h-[calc(100dvh-5.5rem)] min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-3xl" aria-label="Chat with Zaprex">
+        <div className="relative flex items-center gap-2 border-b border-line px-3 py-2.5 sm:px-4" ref={panelRef}>
+          <button type="button" onClick={newChat} disabled={busy || !!locked} title="New chat" aria-label="New chat" data-testid="app-new-chat"
+            className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:text-gold disabled:opacity-40">
+            <SquarePen aria-hidden className="h-[18px] w-[18px]" />
+          </button>
+          <button type="button" onClick={() => setPanel(open => (open === "chats" ? undefined : "chats"))} aria-expanded={panel === "chats"} title="Search chats" aria-label="Search chats" data-testid="app-search-chats"
+            className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:text-gold">
+            <Search aria-hidden className="h-[18px] w-[18px]" />
+          </button>
+          <LiveMascot id="app-head" pose={pose} className="-my-2 ml-1 h-10 w-10 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display truncate text-base font-bold leading-tight" data-testid="app-chat-title">{chatId ? chatTitle || "New chat" : "Zaprex"}</h1>
+            <p className="truncate text-xs text-muted" data-testid="app-usage">
               {state.usage
-                ? `${state.usage.minutesUsed}${state.usage.minutesLimit ? ` / ${state.usage.minutesLimit}` : ""} min this month · ${state.usage.activeRuns}${state.usage.concurrentLimit ? ` / ${state.usage.concurrentLimit}` : ""} running`
+                ? `${state.usage.minutesUsed}${state.usage.minutesLimit ? ` / ${state.usage.minutesLimit}` : ""} min this month`
                 : "Your background coding bot"}
             </p>
           </div>
-          {plan && <span className="rounded-full border border-gold/50 bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold" data-testid="app-plan">{plan}</span>}
-          {notice === "test" && <span className="rounded-full border border-line px-2.5 py-0.5 text-xs font-semibold text-muted" title="Chat and runs use the mock model" data-testid="app-test-mode">Test mode</span>}
-          <div className="ml-auto flex items-center gap-2">
-            {state.repos.length > 0 && (
-              <select aria-label="Repository" data-testid="app-repo" value={repoId} onChange={event => setRepoId(event.target.value)}
-                className="h-9 max-w-52 rounded-full border border-line bg-surface px-3 text-sm">
-                <option value="">No repository</option>
-                {state.repos.map(repo => <option key={repo.id} value={repo.id}>{repo.fullName}</option>)}
-              </select>
-            )}
-            <button type="button" onClick={() => void refresh()} title="Refresh" aria-label="Refresh" className="grid h-9 w-9 place-items-center rounded-full border border-line bg-surface hover:border-blue">
-              <RefreshCw aria-hidden className="h-4 w-4" />
+          {state.runs.length > 0 && (
+            <button type="button" onClick={() => setPanel(open => (open === "runs" ? undefined : "runs"))} aria-expanded={panel === "runs"} data-testid="app-runs-indicator"
+              title={running ? `${running} running` : "Recent runs"}
+              className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold transition ${running ? "border-sky/60 text-sky" : "border-line text-muted hover:text-ink"}`}>
+              <Activity aria-hidden className={`h-3.5 w-3.5 ${running ? "animate-pulse" : ""}`} /> {running ? `${running} running` : "Runs"}
             </button>
-          </div>
+          )}
+          {plan && <span className="hidden rounded-full border border-gold/50 bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold sm:inline" data-testid="app-plan">{plan}</span>}
+          {notice === "test" && <span className="hidden rounded-full border border-line px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline" title="Chat and runs use the mock model" data-testid="app-test-mode">Test mode</span>}
+          {state.repos.length > 0 && (
+            <select aria-label="Repository" data-testid="app-repo" value={repoId} onChange={event => setRepoId(event.target.value)}
+              className="hidden h-9 max-w-44 rounded-full border border-line bg-surface px-3 text-sm sm:block">
+              <option value="">No repository</option>
+              {state.repos.map(repo => <option key={repo.id} value={repo.id}>{repo.fullName}</option>)}
+            </select>
+          )}
+          <button type="button" onClick={() => void refresh()} title="Refresh" aria-label="Refresh" className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full">
+            <RefreshCw aria-hidden className="h-4 w-4" />
+          </button>
+
+          {panel === "chats" && (
+            <div className="zx-popover absolute left-2 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-2 shadow-xl" data-testid="app-chats-panel" role="dialog" aria-label="Search chats">
+              <label className="flex items-center gap-2 rounded-xl border border-line px-3">
+                <Search aria-hidden className="h-4 w-4 text-muted" />
+                <input autoFocus value={chatQuery} onChange={event => setChatQuery(event.target.value)} placeholder="Search chats…" aria-label="Search chats" data-testid="app-chat-search"
+                  className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
+              </label>
+              <ul className="mt-2 max-h-80 overflow-y-auto">
+                {!chatQuery.trim() && (
+                  <li><button type="button" onClick={() => openChat()} data-testid="app-chat-item" data-active={!chatId}
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-bg-soft ${!chatId ? "font-semibold text-gold" : ""}`}>
+                    <MessageSquare aria-hidden className="h-4 w-4 shrink-0" /> Main thread
+                  </button></li>
+                )}
+                {chats.map(chat => (
+                  <li key={chat.id}><button type="button" onClick={() => openChat(chat)} data-testid="app-chat-item" data-active={chat.id === chatId}
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-bg-soft ${chat.id === chatId ? "font-semibold text-gold" : ""}`}>
+                    <MessageSquare aria-hidden className="h-4 w-4 shrink-0 text-muted" />
+                    <span className="min-w-0 flex-1 truncate">{plainTitle(chat.title) || "New chat"}</span>
+                    <span className="shrink-0 text-xs text-muted">{shortDate(chat.updatedAt)}</span>
+                  </button></li>
+                ))}
+                {chatQuery.trim() && chats.length === 0 && <li className="px-3 py-2 text-sm text-muted">No chats match.</li>}
+              </ul>
+            </div>
+          )}
+
+          {panel === "runs" && (
+            <div className="zx-popover absolute right-2 top-full z-30 mt-2 w-[min(26rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-3 shadow-xl" data-testid="app-runs" role="dialog" aria-label="Runs">
+              <p className="mb-2 flex items-center justify-between text-xs font-semibold text-muted"><span>Runs</span><span>{running ? `${running} running` : "none running"}</span></p>
+              <ul className="max-h-96 space-y-2 overflow-y-auto">
+                {state.runs.slice(0, 8).map(run => {
+                  const active = isActive(run);
+                  return (
+                    <li key={run.id} className="rounded-xl border border-line" data-status={run.status}>
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${active ? "animate-pulse bg-sky" : run.status === "succeeded" ? "bg-emerald-400" : "bg-red-400"}`} />
+                        <button type="button" onClick={() => void toggleRun(run)} title={run.prompt} aria-expanded={openRun === run.id} className="min-w-0 flex-1 truncate text-left text-sm">{run.prompt}</button>
+                        {run.prUrl && <a href={run.prUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-sky">#{run.prNumber}</a>}
+                        <span className="shrink-0 text-xs text-muted">{STATUS_LABELS[run.status]} · {formatMinutes(run.computeSeconds)}</span>
+                        {active && (
+                          <button type="button" onClick={() => cancel(run)} title="Cancel run" aria-label="Cancel run" className="grid h-6 w-6 place-items-center rounded-full hover:bg-red-400/20">
+                            <Square aria-hidden className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      {openRun === run.id && <pre className="mx-3 mb-3 max-h-48 overflow-auto zx-code rounded-xl p-3 text-xs text-white/90" data-testid="app-run-log">{runLog.map(event => eventLine(event.type, event.payload)).join("\n") || "No events yet."}</pre>}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5" data-testid="app-thread" aria-live="polite">
@@ -335,7 +471,7 @@ export function ZaprexApp() {
               </div>
             </div>
           )}
-          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} onReply={locked ? undefined : m => { setReplyTo({ role: m.role === "user" ? "user" : "bot", text: quotable(m.text) }); setTaskMode(false); }} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
+          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} onFeedback={locked ? undefined : giveFeedback} onReply={locked ? undefined : m => { setReplyTo({ role: m.role === "user" ? "user" : "bot", text: quotable(m.text) }); setTaskMode(false); }} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
           {live && (
             <>
               {live.attachments.length > 0 && (
@@ -445,50 +581,13 @@ export function ZaprexApp() {
         </div>
       </section>
 
-      <aside className="flex min-w-0 flex-col gap-5">
-        <section className="glass rounded-3xl p-5" aria-label="Runs" data-testid="app-runs">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold">Runs</h2>
-            <span className="flex items-center gap-2 text-xs text-muted">
-              {notice === "sandbox" && <span className="rounded-full border border-line px-2 py-0.5 font-semibold" title="Background runs use a scratch sandbox on the live model" data-testid="app-sandbox">Sandbox</span>}
-              {running ? `${running} running` : "none running"}
-            </span>
-          </div>
-          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press Task to give Zaprex a task, or Start run on a reply.</p>}
-          <ul className="mt-3 space-y-2">
-            {state.runs.slice(0, 8).map(run => {
-              const active = isActive(run);
-              return (
-                <li key={run.id} className="rounded-2xl border border-line bg-surface" data-status={run.status}>
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${active ? "animate-pulse bg-sky" : run.status === "succeeded" ? "bg-emerald-400" : "bg-red-400"}`} />
-                    <button type="button" onClick={() => void toggleRun(run)} title={run.prompt} aria-expanded={openRun === run.id} className="min-w-0 flex-1 truncate text-left text-sm">{run.prompt}</button>
-                    {run.prUrl && <a href={run.prUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-sky">#{run.prNumber}</a>}
-                    <span className="shrink-0 text-xs text-muted">{STATUS_LABELS[run.status]} · {formatMinutes(run.computeSeconds)}</span>
-                    {active && (
-                      <button type="button" onClick={() => cancel(run)} title="Cancel run" aria-label="Cancel run" className="grid h-6 w-6 place-items-center rounded-full hover:bg-red-400/20">
-                        <Square aria-hidden className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                  {openRun === run.id && <pre className="mx-3 mb-3 max-h-48 overflow-auto zx-code rounded-xl p-3 text-xs text-white/90" data-testid="app-run-log">{runLog.map(event => eventLine(event.type, event.payload)).join("\n") || "No events yet."}</pre>}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        <section className="glass rounded-3xl p-5 text-sm">
-          <h2 className="font-display text-lg font-bold">More</h2>
-          <p className="mt-1 text-muted">GitHub, routines, memory and notifications live in your Zaprex dashboard.</p>
-          <a href={ZAPREX_DASHBOARD_URL} className="mt-3 inline-flex items-center gap-1.5 font-semibold text-sky hover:underline">Open dashboard <ExternalLink aria-hidden className="h-3.5 w-3.5" /></a>
-          <p className="mt-4 text-xs text-muted">Signed in as <b className="text-ink">{session.user.email}</b> with your Ingot account.</p>
-        </section>
-      </aside>
     </div>
   );
 }
 
-function ChatMessage({ message, onRun, onReply, avatar }: { message: Message; onRun?: (task: string) => void; onReply?: (message: Message) => void; avatar?: React.ReactNode }) {
+function ChatMessage({ message, onRun, onReply, onFeedback, avatar }: { message: Message; onRun?: (task: string) => void; onReply?: (message: Message) => void; onFeedback?: (message: Message, value: Feedback | 0, reason?: string) => void; avatar?: React.ReactNode }) {
+  const [asking, setAsking] = useState(false);
+  const [reason, setReason] = useState("");
   if (message.kind === "approval") {
     return <p className="flex items-center gap-2 text-xs text-muted"><ShieldAlert aria-hidden className="h-3.5 w-3.5 text-gold" /> {message.text}</p>;
   }
@@ -496,9 +595,10 @@ function ChatMessage({ message, onRun, onReply, avatar }: { message: Message; on
   const pr = mine ? undefined : prLinkIn(message.text);
   const task = mine ? undefined : taskIn(message.text);
   return (
-    <div className={`group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role} data-testid="app-message">
+    <>
+    <div className={`group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role} data-testid="app-message" data-feedback={message.feedback ?? undefined}>
       {!mine && (avatar ?? <span aria-hidden className="w-10 shrink-0" />)}
-      {mine && onReply && <ReplyButton onClick={() => onReply(message)} />}
+      {mine && onReply && <MessageActions message={message} onReply={onReply} />}
       <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "zx-mine bg-blue text-white" : "border border-line bg-surface"}`}>
         {!mine && <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>}
         <Markdown text={task ? withoutTaskLine(message.text) : message.text} />
@@ -510,19 +610,72 @@ function ChatMessage({ message, onRun, onReply, avatar }: { message: Message; on
         )}
         {pr && <a href={pr} target="_blank" rel="noreferrer" data-testid="app-pr-link" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sky hover:underline"><GitPullRequestDraft aria-hidden className="h-3.5 w-3.5" /> Open draft PR</a>}
       </div>
-      {!mine && onReply && <ReplyButton onClick={() => onReply(message)} />}
+      {!mine && onReply && <MessageActions message={message} onReply={onReply} onFeedback={onFeedback && message.id > 0 ? (value) => {
+        onFeedback(message, value);
+        setAsking(value === -1);
+        setReason("");
+      } : undefined} />}
+    </div>
+    {asking && onFeedback && (
+      <form className="ml-12 flex max-w-[85%] items-center gap-2" data-testid="app-feedback-form"
+        onSubmit={event => { event.preventDefault(); if (reason.trim()) onFeedback(message, -1, reason.trim()); setAsking(false); }}>
+        <input autoFocus value={reason} onChange={event => setReason(event.target.value)} maxLength={300} placeholder="What went wrong? (optional)" aria-label="What went wrong?" data-testid="app-feedback-reason"
+          className="h-8 min-w-0 flex-1 rounded-full border border-line bg-surface px-3 text-xs outline-none focus:border-gold" />
+        <button type="submit" data-testid="app-feedback-send" className="h-8 rounded-full bg-gold px-3 text-xs font-semibold text-navy">Send</button>
+        <button type="button" onClick={() => setAsking(false)} className="h-8 rounded-full px-2 text-xs text-muted hover:text-ink">Skip</button>
+      </form>
+    )}
+    </>
+  );
+}
+
+/** Hover (or focus) actions on a message (IDEA-187/189): Reply, Copy, and thumbs up/down on Zaprex's replies. A chosen thumb stays visible. */
+function MessageActions({ message, onReply, onFeedback }: { message: Message; onReply: (message: Message) => void; onFeedback?: (value: Feedback | 0) => void }) {
+  const [copied, setCopied] = useState(false);
+  const base = "grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-gold focus-visible:opacity-100";
+  const hidden = "opacity-0 group-hover:opacity-100";
+  const liked = message.feedback === 1;
+  const disliked = message.feedback === -1;
+  async function copy() {
+    try { await navigator.clipboard.writeText(withoutTaskLine(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
+  }
+  return (
+    <div className={`mb-1 flex shrink-0 items-center gap-1 ${message.role === "user" ? "flex-row-reverse" : ""}`} data-testid="app-message-actions">
+      <button type="button" onClick={() => onReply(message)} title="Reply" aria-label="Reply to this message" data-testid="app-reply" className={`${base} ${hidden}`}>
+        <CornerUpLeft aria-hidden className="h-3.5 w-3.5" />
+      </button>
+      <button type="button" onClick={() => void copy()} title={copied ? "Copied" : "Copy"} aria-label="Copy message" data-testid="app-copy" className={`${base} ${hidden}`}>
+        {copied ? <Check aria-hidden className="h-3.5 w-3.5 text-emerald-400" /> : <Copy aria-hidden className="h-3.5 w-3.5" />}
+      </button>
+      {onFeedback && (
+        <>
+          <button type="button" onClick={() => onFeedback(liked ? 0 : 1)} aria-pressed={liked} title={liked ? "Remove like" : "Good answer"} aria-label="Good answer" data-testid="app-like"
+            className={`${base} ${liked ? "border-gold/60 text-gold" : hidden}`}>
+            <ThumbsUp aria-hidden className="h-3.5 w-3.5" fill={liked ? "currentColor" : "none"} />
+          </button>
+          <button type="button" onClick={() => onFeedback(disliked ? 0 : -1)} aria-pressed={disliked} title={disliked ? (message.feedbackReason ? `Removes: ${message.feedbackReason}` : "Remove dislike") : "Bad answer"} aria-label="Bad answer" data-testid="app-dislike"
+            className={`${base} ${disliked ? "border-red-400/60 text-red-400" : hidden}`}>
+            <ThumbsDown aria-hidden className="h-3.5 w-3.5" fill={disliked ? "currentColor" : "none"} />
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
-/** Hover (or focus) action on a message: reply with it quoted (IDEA-187). */
-function ReplyButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} title="Reply" aria-label="Reply to this message" data-testid="app-reply"
-      className="mb-1 inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2 text-xs text-muted opacity-0 transition hover:text-gold focus-visible:opacity-100 group-hover:opacity-100">
-      <CornerUpLeft aria-hidden className="h-3.5 w-3.5" /> Reply
-    </button>
-  );
+/** A chat title without Markdown marks (the server stores the same). */
+function plainTitle(text: string): string {
+  const line = text.split("\n").map(part => part.trim()).find(part => part && !part.startsWith(">")) ?? "";
+  const plain = line.replace(/[*_`~#]+/g, "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").trim();
+  return plain.length > 80 ? `${plain.slice(0, 79).trimEnd()}…` : plain;
+}
+
+function shortDate(iso: string): string {
+  const date = new Date(iso);
+  const today = new Date();
+  return date.toDateString() === today.toDateString()
+    ? date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function Centered({ children }: { children: React.ReactNode }) {

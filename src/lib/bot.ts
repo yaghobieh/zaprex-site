@@ -9,7 +9,11 @@ export interface Run {
   prNumber: number | null; prUrl: string | null; summary: string; computeSeconds: number; error: string | null;
   createdAt: string; startedAt: string | null; endedAt: string | null;
 }
-export interface Message { id: number; role: "user" | "bot"; kind: string; text: string; runId: string | null; approvalId: string | null; createdAt: string }
+export interface Message { id: number; role: "user" | "bot"; kind: string; text: string; runId: string | null; approvalId: string | null; createdAt: string; feedback?: Feedback | null; feedbackReason?: string | null }
+/** Thumbs up (1) or down (-1) on a Zaprex message (IDEA-189). */
+export type Feedback = 1 | -1;
+/** One Zaprex chat (IDEA-189); the original thread has no chat. */
+export interface Chat { id: string; title: string; createdAt: string; updatedAt: string }
 export interface Approval { id: string; runId: string; action: string; title: string; reason: string; preview: string; status: string }
 export interface RunEvent { seq: number; type: string; payload: Record<string, unknown>; createdAt: string }
 export interface Repo { id: string; fullName: string; defaultBranch: string; enabled: boolean }
@@ -54,7 +58,7 @@ export const ERROR_TEXT: Record<string, string> = {
 
 export interface ApiResponse { status: number; body: Record<string, unknown> }
 
-export async function botApi(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<ApiResponse> {
+export async function botApi(method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<ApiResponse> {
   try {
     const response = await fetch(`${BOT_API}${path}`, {
       method, credentials: "same-origin", cache: "no-store",
@@ -133,13 +137,13 @@ export const TASK_LINE = /^TASK:\s*(.+)$/m;
 export const withoutTaskLine = (text: string): string => text.replace(TASK_LINE, "").trim();
 export const taskIn = (text: string): string | undefined => TASK_LINE.exec(text)?.[1]?.trim();
 
-export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal, attachments: unknown[] = [], replyTo?: string): Promise<ApiResponse | undefined> {
+export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal, attachments: unknown[] = [], replyTo?: string, chatId?: string): Promise<ApiResponse | undefined> {
   let response: Response;
   try {
     response = await fetch(`${BOT_API}/talk`, {
       method: "POST", credentials: "same-origin", cache: "no-store", signal,
       headers: { "content-type": "application/json", accept: "text/event-stream" },
-      body: JSON.stringify({ text, repoId, ...(attachments.length ? { attachments } : {}), ...(replyTo ? { replyTo: { text: replyTo } } : {}) }),
+      body: JSON.stringify({ text, repoId, ...(attachments.length ? { attachments } : {}), ...(replyTo ? { replyTo: { text: replyTo } } : {}), ...(chatId ? { chatId } : {}) }),
     });
   } catch {
     return { status: 0, body: {} };
