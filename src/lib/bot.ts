@@ -33,6 +33,10 @@ export const STATUS_LABELS: Record<RunStatus, string> = {
 export const ERROR_TEXT: Record<string, string> = {
   bot_upgrade_required: "Zaprex is part of every paid Ingot plan, from $6 a month.",
   bot_paused: "Zaprex is paused right now.",
+  unsupported_attachment: "That attachment type is not supported. Attach text or code files, or PNG, JPEG, WebP or GIF images.",
+  too_many_attachments: "You can attach up to 4 files per message.",
+  attachment_too_large: "An attachment is too large.",
+  attachments_too_large: "The attachments are too large together. Remove one and try again.",
   bot_limit_minutes: "You have used all Zaprex minutes for this month.",
   bot_limit_concurrent: "A run is already in progress. Wait for it to finish.",
   bot_spend_cap: "The spend cap has been reached.",
@@ -126,13 +130,13 @@ export const TASK_LINE = /^TASK:\s*(.+)$/m;
 export const withoutTaskLine = (text: string): string => text.replace(TASK_LINE, "").trim();
 export const taskIn = (text: string): string | undefined => TASK_LINE.exec(text)?.[1]?.trim();
 
-export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal): Promise<ApiResponse | undefined> {
+export async function talk(text: string, repoId: string | null, onEvent: (event: TalkEvent) => void, signal?: AbortSignal, attachments: unknown[] = []): Promise<ApiResponse | undefined> {
   let response: Response;
   try {
     response = await fetch(`${BOT_API}/talk`, {
       method: "POST", credentials: "same-origin", cache: "no-store", signal,
       headers: { "content-type": "application/json", accept: "text/event-stream" },
-      body: JSON.stringify({ text, repoId }),
+      body: JSON.stringify(attachments.length ? { text, repoId, attachments } : { text, repoId }),
     });
   } catch {
     return { status: 0, body: {} };

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, ExternalLink, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square } from "lucide-react";
+import { ArrowUp, ExternalLink, FileText, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
 import { startSignIn, ZAPREX_DASHBOARD_URL, type AccountUser } from "@/lib/auth";
@@ -9,6 +9,7 @@ import {
   type Approval, type Decision, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
 } from "@/lib/bot";
 import { INGOT } from "@/lib/site";
+import { ACCEPT, MAX_ATTACHMENTS, MAX_TOTAL_BYTES, bytesOf, formatSize, payloadOf, readAttachment, type Attachment } from "@/lib/attachments";
 
 /** Browser speech recognition (Chrome/Safari prefix); the mic button only shows where it exists. */
 type Recognition = { lang: string; interimResults: boolean; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void };
@@ -39,8 +40,14 @@ interface BotState {
 const EMPTY: BotState = { loaded: false, repos: [], messages: [], approvals: [], runs: [] };
 const EXAMPLES = ["Hi Zaprex! What can you do?", "Fix the failing tests", "How should I add pagination to the orders list?"];
 
+/** Local preview of an attached image (a data URL, so next/image has nothing to optimize). */
+function Thumb({ src, alt, className, testId }: { src: string; alt: string; className: string; testId?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element -- data URL preview
+  return <img src={src} alt={alt} className={className} data-testid={testId} />;
+}
+
 /** A reply being streamed right now (IDEA-177). */
-interface Live { user: string; reply: string; phase: "thinking" | "talking" }
+interface Live { user: string; reply: string; phase: "thinking" | "talking"; attachments: Attachment[] }
 
 /** zaprex.dev/app (IDEA-173): Zaprex as its own app. Same account, thread, runs and approvals as everywhere else. */
 export function ZaprexApp() {
@@ -56,6 +63,9 @@ export function ZaprexApp() {
   const [taskMode, setTaskMode] = useState(false);
   const [listening, setListening] = useState(false);
   const [canDictate, setCanDictate] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
   const recognition = useRef<Recognition | undefined>(undefined);
   const thread = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -134,6 +144,26 @@ export function ZaprexApp() {
     rec.start();
   }
 
+  /** Attach (IDEA-186): from the + picker, drag and drop, or a pasted image. */
+  async function addFiles(files: File[]) {
+    if (!files.length || locked) return;
+    let next = [...attachments];
+    const problems: string[] = [];
+    for (const file of files) {
+      if (next.length >= MAX_ATTACHMENTS) { problems.push(`You can attach up to ${MAX_ATTACHMENTS} files per message.`); break; }
+      try {
+        const item = await readAttachment(file);
+        if (bytesOf([...next, item]) > MAX_TOTAL_BYTES) { problems.push(`${item.name} does not fit: attachments are limited to ${formatSize(MAX_TOTAL_BYTES)} per message.`); continue; }
+        next = [...next, item];
+      } catch (error) {
+        problems.push(error instanceof Error ? error.message : "That file could not be attached.");
+      }
+    }
+    setAttachments(next);
+    setActionError(problems.join(" "));
+    if (next.length) setTaskMode(false);
+  }
+
   function submit() {
     if (!taskMode) { send(); return; }
     const task = draft.trim();
@@ -158,17 +188,19 @@ export function ZaprexApp() {
   /** Chat (IDEA-177): Zaprex answers right away, streamed; a proposed task becomes a "Start run" button. */
   function send(text = draft) {
     const prompt = text.trim().slice(0, MAX_PROMPT);
-    if (!prompt || busy) return;
+    const files = text === draft ? attachments : [];
+    if ((!prompt && !files.length) || busy) return;
     setDraft("");
+    setAttachments([]);
     setBusy(true);
     setActionError("");
-    setLive({ user: prompt, reply: "", phase: "thinking" });
+    setLive({ user: prompt, reply: "", phase: "thinking", attachments: files });
     void (async () => {
       let failed = "";
       const response = await talk(prompt, repoId || null, event => {
         if (event.type === "text") setLive(current => current && { ...current, reply: current.reply + event.text, phase: "talking" });
         if (event.type === "error") failed = errorText({ status: 502, body: { error: event.code } });
-      });
+      }, undefined, payloadOf(files));
       if (response) failed = errorText(response);
       await refresh();
       setLive(undefined);
@@ -288,7 +320,14 @@ export function ZaprexApp() {
           {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
           {live && (
             <>
-              <ChatMessage message={{ id: -1, role: "user", kind: "text", text: live.user, runId: null, approvalId: null, createdAt: "" }} />
+              {live.attachments.length > 0 && (
+                <div className="flex flex-wrap items-center justify-end gap-2" data-testid="app-live-attachments">
+                  {live.attachments.map(item => item.kind === "image"
+                    ? <Thumb key={item.id} src={item.dataUrl} alt={item.name} className="h-20 w-20 rounded-xl border border-line object-cover" />
+                    : <span key={item.id} className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-1.5 text-xs"><FileText aria-hidden className="h-3.5 w-3.5 text-muted" />{item.name}</span>)}
+                </div>
+              )}
+              {live.user && <ChatMessage message={{ id: -1, role: "user", kind: "text", text: live.user, runId: null, approvalId: null, createdAt: "" }} />}
               <div className="flex items-end justify-start gap-2" data-role="bot" data-testid="app-live-reply">
                 <LiveMascot id="app-avatar-live" pose={live.phase} testId="app-avatar" className="-mb-1 h-10 w-10 shrink-0" />
                 <div className="max-w-[85%] rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
@@ -321,27 +360,52 @@ export function ZaprexApp() {
             <LiveMascot id="app-status" pose={live ? live.phase : pose} testId="app-status-mascot" className="h-7 w-7 shrink-0" />
             <span className={activity ? "zx-activity text-muted" : "text-muted/70"}>{activity ?? (locked ? "Zaprex is locked on this plan" : "Ready when you are")}</span>
           </div>
-          <form className="zx-composer mt-1 flex items-end gap-2 rounded-[28px] border p-1.5" onSubmit={event => { event.preventDefault(); submit(); }} data-testid="app-composer">
-            <button type="button" onClick={() => setTaskMode(on => !on)} aria-pressed={taskMode} disabled={!!locked} data-testid="app-plus"
-              title={taskMode ? "Back to chat" : "Run as a background task (draft PR)"} aria-label="Run as a background task"
-              className={`zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition ${taskMode ? "rotate-45 bg-gold text-navy" : ""}`}>
-              <Plus aria-hidden className="h-5 w-5" />
-            </button>
-            {taskMode && <span className="mb-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-xs font-semibold text-gold" data-testid="app-task-chip"><Play aria-hidden className="h-3 w-3" /> Task</span>}
-            <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={1} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
-              onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }}
-              placeholder={taskMode ? "Describe the task: Zaprex opens a draft PR…" : "Ask Zaprex anything…"} aria-label="Message Zaprex"
-              className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-[15px] leading-5 outline-none [field-sizing:content] placeholder:text-muted" />
-            {canDictate && (
-              <button type="button" onClick={toggleDictation} disabled={!!locked} aria-pressed={listening} title={listening ? "Stop dictation" : "Dictate"} aria-label="Dictate" data-testid="app-mic"
-                className={`zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full ${listening ? "animate-pulse text-gold" : "text-muted"}`}>
-                <Mic aria-hidden className="h-[18px] w-[18px]" />
-              </button>
+          <form className={`zx-composer mt-1 rounded-[28px] border p-1.5 transition ${dragging ? "zx-dropping" : ""}`} onSubmit={event => { event.preventDefault(); submit(); }} data-testid="app-composer"
+            onDragOver={event => { if (event.dataTransfer.types.includes("Files") && !locked) { event.preventDefault(); setDragging(true); } }}
+            onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }}
+            onDrop={event => { event.preventDefault(); setDragging(false); void addFiles(Array.from(event.dataTransfer.files)); }}>
+            {attachments.length > 0 && (
+              <ul className="flex flex-wrap gap-2 px-1.5 pb-1.5 pt-1" aria-label="Attachments" data-testid="app-attachments">
+                {attachments.map(item => (
+                  <li key={item.id} className="zx-chip group relative flex items-center gap-2 rounded-2xl border p-1 pr-2 text-xs" data-testid="app-attachment" data-kind={item.kind}>
+                    {item.kind === "image"
+                      ? <Thumb src={item.dataUrl} alt="" className="h-10 w-10 rounded-xl object-cover" testId="app-attachment-thumb" />
+                      : <span className="grid h-10 w-10 place-items-center rounded-xl bg-black/10"><FileText aria-hidden className="h-4 w-4 text-muted" /></span>}
+                    <span className="flex min-w-0 flex-col"><span className="max-w-36 truncate font-medium">{item.name}</span><span className="text-muted">{formatSize(item.size)}</span></span>
+                    <button type="button" onClick={() => setAttachments(current => current.filter(other => other.id !== item.id))} aria-label={`Remove ${item.name}`} title="Remove" data-testid="app-attachment-remove"
+                      className="ml-1 grid h-5 w-5 place-items-center rounded-full bg-black/40 text-white hover:bg-black/60"><X aria-hidden className="h-3 w-3" /></button>
+                  </li>
+                ))}
+              </ul>
             )}
-            <button type="submit" disabled={busy || !draft.trim() || !!locked} data-testid="app-send" aria-label={taskMode ? "Start run" : "Send"} title={taskMode ? "Start run" : "Send"}
-              className="zx-send grid h-9 w-9 shrink-0 place-items-center rounded-full transition disabled:opacity-40">
-              {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <ArrowUp aria-hidden className="h-5 w-5" strokeWidth={2.5} />}
-            </button>
+            <div className="flex items-end gap-2">
+              <input ref={picker} type="file" multiple accept={ACCEPT} hidden data-testid="app-file-input" onChange={event => { void addFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
+              <button type="button" onClick={() => picker.current?.click()} disabled={!!locked || taskMode} data-testid="app-plus"
+                title={taskMode ? "Attachments are for chat messages" : "Attach files or images"} aria-label="Attach files or images"
+                className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition disabled:opacity-40">
+                <Plus aria-hidden className="h-5 w-5" />
+              </button>
+              <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={1} maxLength={MAX_PROMPT} disabled={!!locked} data-testid="app-input"
+                onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submit(); } }}
+                onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); void addFiles(files); } }}
+                placeholder={taskMode ? "Describe the task: Zaprex opens a draft PR…" : "Ask Zaprex anything…"} aria-label="Message Zaprex"
+                className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-[15px] leading-5 outline-none [field-sizing:content] placeholder:text-muted" />
+              <button type="button" onClick={() => setTaskMode(on => !on)} aria-pressed={taskMode} disabled={!!locked || attachments.length > 0} data-testid="app-task-toggle"
+                title={attachments.length ? "Remove attachments to start a task" : taskMode ? "Back to chat" : "Run as a background task (draft PR)"}
+                className={`mb-1 inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition disabled:opacity-40 ${taskMode ? "border-gold bg-gold text-navy" : "border-line text-muted hover:text-gold"}`}>
+                <Play aria-hidden className="h-3 w-3" /> Task
+              </button>
+              {canDictate && (
+                <button type="button" onClick={toggleDictation} disabled={!!locked} aria-pressed={listening} title={listening ? "Stop dictation" : "Dictate"} aria-label="Dictate" data-testid="app-mic"
+                  className={`zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full ${listening ? "animate-pulse text-gold" : "text-muted"}`}>
+                  <Mic aria-hidden className="h-[18px] w-[18px]" />
+                </button>
+              )}
+              <button type="submit" disabled={busy || (!draft.trim() && !(attachments.length && !taskMode)) || !!locked} data-testid="app-send" aria-label={taskMode ? "Start run" : "Send"} title={taskMode ? "Start run" : "Send"}
+                className="zx-send grid h-9 w-9 shrink-0 place-items-center rounded-full transition disabled:opacity-40">
+                {busy ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <ArrowUp aria-hidden className="h-5 w-5" strokeWidth={2.5} />}
+              </button>
+            </div>
           </form>
         </div>
       </section>
@@ -355,7 +419,7 @@ export function ZaprexApp() {
               {running ? `${running} running` : "none running"}
             </span>
           </div>
-          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press + to give Zaprex a task, or Start run on a reply.</p>}
+          {state.runs.length === 0 && <p className="mt-3 text-sm text-muted">No runs yet. Press Task to give Zaprex a task, or Start run on a reply.</p>}
           <ul className="mt-3 space-y-2">
             {state.runs.slice(0, 8).map(run => {
               const active = isActive(run);
