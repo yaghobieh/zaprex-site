@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 /** zaprex.dev public pages: load, no page errors, no competitor names, links resolve, mobile width, themes. */
 const PAGES = ["/", "/docs", "/about", "/docs/quick-start", "/docs/zaprex-app", "/docs/plans-and-limits", "/docs/models", "/docs/faq"];
-const COMPETITORS = /\b(Cursor|Copilot|Windsurf|VS ?Code|JetBrains|Replit|Codeium|Devin|ChatGPT|Claude)\b/;
+const COMPETITORS = /\b(Cursor|Copilot|Windsurf|VS ?Code|JetBrains|Replit|Codeium|Devin|ChatGPT|Claude|Grok|xAI|OpenAI|Anthropic|Gemini)\b/;
 
 for (const path of PAGES) {
   test(`page ${path} loads cleanly @mobile`, async ({ page }) => {

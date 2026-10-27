@@ -47,7 +47,7 @@ export const STEPS = [
 ] as const;
 
 export const FEATURES = [
-  { icon: "Zap", title: "Runs on Ingot, our own model", body: "Built on Grok and tuned for code. Prefer another model? Switch per run from the model picker." },
+  { icon: "Zap", title: "Runs on Ingot, our own model", body: "Tuned for code and fast on real repos. Prefer another model? Switch per run from the model picker." },
   { icon: "Box", title: "Isolated cloud machines", body: "Every run starts clean in its own sandbox. Nothing touches your laptop, and nothing is shared between runs." },
   { icon: "GitPullRequestDraft", title: "Draft PRs, never main", body: "Work lands on a fresh branch as a draft pull request. Protected branches stay protected." },
   { icon: "Hand", title: "Approval cards", body: "Installing packages, running migrations, network calls: risky steps pause and wait for your yes." },
@@ -75,7 +75,7 @@ export const SECURITY = [
 export const FAQ = [
   { q: "What is Zaprex?", a: "Zaprex is the background AI coding bot from Ingot, the open-source AI IDE. It works on your repositories while you're away and delivers its work as draft pull requests." },
   { q: "Is Zaprex part of the Ingot IDE?", a: "No. Zaprex is its own app at zaprex.dev/app. It shares your Ingot account, and the Ingot IDE links to it with a small T-rex next to the agent." },
-  { q: "Which model does it use?", a: "By default Zaprex runs on Ingot, our own model built on Grok and tuned for coding work. You can pick another available model for any run." },
+  { q: "Which model does it use?", a: "By default Zaprex runs on Ingot, our own model, tuned for coding work. You can pick another available model for any run." },
   { q: "Can it push to my main branch?", a: "No. Zaprex always works on a new branch and opens a draft pull request. You review and merge." },
   { q: "What counts as a risky action?", a: "Things like installing packages, running database migrations, deleting files in bulk or calling outside services. Zaprex pauses and shows an approval card first." },
   { q: "Where does my code run?", a: "In a fresh, isolated cloud machine created for that run and removed when it ends. Nothing runs on your computer." },

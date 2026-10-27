@@ -290,11 +290,11 @@ Until GitHub is connected, the portal shows **Test mode**: runs use a scratch wo
     slug: "models",
     group: "Models and plans",
     title: "Models",
-    description: "Ingot (built on Grok) by default, fallbacks, picking another model, and your own keys.",
+    description: "Ingot, our own model, by default, fallbacks, picking another model, and your own keys.",
     body: `
 ## Ingot, by default
 
-Zaprex runs on **Ingot**, our own model, by default. Ingot is built on xAI **Grok**: it routes to the current flagship Grok coding model first, then a fast Grok coding model.
+Zaprex runs on **Ingot**, our own model, by default. Ingot is tuned for coding work: it routes each request to a strong coding model first, then to a faster one.
 
 ## Fallbacks
 
@@ -448,7 +448,7 @@ No. Every run gets a fresh, isolated cloud sandbox that is destroyed afterwards.
 
 ## Which model does it use?
 
-Ingot, our own model built on Grok, by default. You can pick another allowed model per task. See [Models](/docs/models).
+Ingot, our own model, by default. You can pick another allowed model per task. See [Models](/docs/models).
 
 ## Which plans include it?
 
