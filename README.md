@@ -34,3 +34,7 @@ Try `/app` without an account: run `node scripts/mock-bot-server.mjs` and start 
 Vercel project `zaprex-site` (team forgestacks-projects). Production domain `zaprex.dev`; `www.zaprex.dev` redirects to it.
 
 No secrets live in this repo. Put any future keys in Vercel environment variables or a local `.env` (gitignored).
+
+## End-to-end tests
+
+`npm run e2e` runs the Playwright suite in `e2e/` against https://zaprex.dev (set `ZAPREX_E2E_URL=http://localhost:3000` for a local build). The `/app` tests mock `/api/me` and `/api/bot/*` in the browser, so they never sign in, call a model or spend.
