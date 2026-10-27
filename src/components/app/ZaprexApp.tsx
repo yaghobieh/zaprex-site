@@ -249,7 +249,7 @@ export function ZaprexApp() {
           <div key={approval.id} role="alertdialog" aria-label={approval.title} data-testid="app-approval" className="mx-4 mb-3 rounded-2xl border border-gold/50 bg-gold/10 p-4">
             <p className="flex items-center gap-2 text-sm font-semibold"><ShieldAlert aria-hidden className="h-4 w-4 text-gold" /> {approval.title}</p>
             {approval.reason && <p className="mt-1 text-sm text-muted">{approval.reason}</p>}
-            {approval.preview && <pre className="mt-2 max-h-36 overflow-auto rounded-xl bg-[#0c1330] p-3 text-xs text-white/90">{approval.preview}</pre>}
+            {approval.preview && <pre className="mt-2 max-h-36 overflow-auto zx-code rounded-xl p-3 text-xs text-white/90">{approval.preview}</pre>}
             <div className="mt-3 flex flex-wrap justify-end gap-2">
               <button type="button" disabled={busy} onClick={() => decide(approval, "reject")} className="h-9 rounded-full border border-line px-4 text-sm font-semibold">Reject</button>
               <button type="button" disabled={busy} onClick={() => decide(approval, "approve_run")} className="h-9 rounded-full border border-line px-4 text-sm font-semibold">Approve for this run</button>
@@ -297,7 +297,7 @@ export function ZaprexApp() {
                       </button>
                     )}
                   </div>
-                  {openRun === run.id && <pre className="mx-3 mb-3 max-h-48 overflow-auto rounded-xl bg-[#0c1330] p-3 text-xs text-white/90" data-testid="app-run-log">{runLog.map(event => eventLine(event.type, event.payload)).join("\n") || "No events yet."}</pre>}
+                  {openRun === run.id && <pre className="mx-3 mb-3 max-h-48 overflow-auto zx-code rounded-xl p-3 text-xs text-white/90" data-testid="app-run-log">{runLog.map(event => eventLine(event.type, event.payload)).join("\n") || "No events yet."}</pre>}
                 </li>
               );
             })}

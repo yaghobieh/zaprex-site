@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 /** zaprex.dev/app: the Zaprex app itself (IDEA-173). Ingot links here from the small T-rex next to its agent. */
 export default function AppPage() {
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden">
+    <div className="zx-app-surface flex min-h-screen flex-col overflow-x-hidden">
       <div aria-hidden className="space-bg pointer-events-none fixed inset-0 -z-10" />
       <div aria-hidden className="docs-nebula pointer-events-none fixed inset-0 -z-10" />
       <header className="glass-bar sticky top-0 z-40">
