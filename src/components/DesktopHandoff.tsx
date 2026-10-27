@@ -1,10 +1,12 @@
 "use client";
 
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const TOKEN = /^[A-Za-z0-9._~-]{8,256}$/;
+
+/** "pending" until the query is read on the client, then the zaprex:// link or null when the code is missing. */
+type Link = string | null | "pending";
 
 /**
  * Desktop sign-in, browser side. The Zaprex desktop app opens the Ingot portal in the default browser (Google and
@@ -13,39 +15,41 @@ const TOKEN = /^[A-Za-z0-9._~-]{8,256}$/;
  * hands code and state to the app through zaprex://auth/callback, and the app redeems it in its own session.
  */
 export function DesktopHandoff() {
-  const params = useSearchParams();
+  const [link, setLink] = useState<Link>("pending");
   const [opened, setOpened] = useState(false);
-  // Read once: the code is scrubbed from the address bar after the hand-off, which must not turn this into an error.
-  const [link] = useState(() => {
-    const code = params.get("code") ?? "";
-    const state = params.get("state") ?? "";
-    if (!TOKEN.test(code) || !TOKEN.test(state)) return null;
-    return `zaprex://auth/callback?${new URLSearchParams({ code, state }).toString()}`;
-  });
 
   useEffect(() => {
-    if (!link) return;
-    window.location.href = link;
-    // Drop the code from this tab's address bar and history once it has been handed over.
+    // Read the query once from the real URL (not the prerendered params), then scrub the code from the address bar.
+    const query = new URLSearchParams(window.location.search);
+    const code = query.get("code") ?? "";
+    const state = query.get("state") ?? "";
+    const target = TOKEN.test(code) && TOKEN.test(state)
+      ? `zaprex://auth/callback?${new URLSearchParams({ code, state }).toString()}`
+      : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the hand-off query on mount
+    setLink(target);
+    if (!target) return;
+    window.location.href = target;
     const timer = window.setTimeout(() => {
       window.history.replaceState(null, "", "/auth/desktop");
       setOpened(true);
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [link]);
+  }, []);
 
+  const ok = link !== null;
   return (
     <div className="max-w-sm text-center" data-testid="auth-desktop">
-      <ZaprexMascot id="desktop-handoff" state={link ? "working" : "error"} className="mx-auto block h-24 w-24" decorative />
-      <h1 className="font-display mt-4 text-2xl font-bold">{link ? "Back to the Zaprex app" : "Sign-in didn’t finish"}</h1>
+      <ZaprexMascot id="desktop-handoff" state={ok ? "working" : "error"} className="mx-auto block h-24 w-24" decorative />
+      <h1 className="font-display mt-4 text-2xl font-bold">{ok ? "Back to the Zaprex app" : "Sign-in didn’t finish"}</h1>
       <p className="mt-2 text-muted">
-        {!link
+        {!ok
           ? "This link expired or was already used. Start sign-in again from the Zaprex app."
           : opened
             ? "Choose “Open Zaprex” if your browser asks. Then you can close this tab."
             : "Opening the Zaprex app…"}
       </p>
-      {link && (
+      {ok && link !== "pending" && (
         <a href={link} className="btn-primary mt-6 inline-flex h-11 items-center rounded-full px-5 font-semibold text-white">{opened ? "Open Zaprex again" : "Open Zaprex"}</a>
       )}
     </div>
