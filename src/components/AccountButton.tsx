@@ -55,7 +55,7 @@ export function AccountButton() {
         <span className="hidden max-w-32 truncate sm:inline">{user.name || user.email}</span>
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 mt-2 w-60 rounded-2xl border border-line bg-surface p-2 shadow-xl">
+        <div role="menu" className="zx-popover absolute right-0 mt-2 w-60 rounded-2xl border border-line bg-surface p-2 shadow-xl">
           <p className="px-3 py-2 text-xs text-muted">Signed in with your Ingot account<br /><b className="text-ink">{user.email}</b></p>
           <a role="menuitem" href="/app" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-bg-soft">Open Zaprex app</a>
           <a role="menuitem" href={ZAPREX_DASHBOARD_URL} className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-bg-soft">Open Zaprex dashboard</a>
