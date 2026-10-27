@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowUp, ExternalLink, FileText, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square, X } from "lucide-react";
+import { ArrowUp, CornerUpLeft, ExternalLink, FileText, GitPullRequestDraft, Loader2, Mic, Play, Plus, RefreshCw, ShieldAlert, Square, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
+import { Markdown } from "@/components/app/Markdown";
 import { startSignIn, ZAPREX_DASHBOARD_URL, type AccountUser } from "@/lib/auth";
 import {
-  ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, STATUS_LABELS, talk, taskIn, withoutTaskLine,
+  ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, quotable, STATUS_LABELS, talk, taskIn, withoutTaskLine, withQuote,
   type Approval, type Decision, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
 } from "@/lib/bot";
 import { INGOT } from "@/lib/site";
@@ -47,7 +48,9 @@ function Thumb({ src, alt, className, testId }: { src: string; alt: string; clas
 }
 
 /** A reply being streamed right now (IDEA-177). */
-interface Live { user: string; reply: string; phase: "thinking" | "talking"; attachments: Attachment[] }
+interface Live { user: string; reply: string; phase: "thinking" | "talking"; attachments: Attachment[]; search?: string }
+/** The message being replied to (IDEA-187). */
+interface ReplyTo { role: "user" | "bot"; text: string }
 
 /** zaprex.dev/app (IDEA-173): Zaprex as its own app. Same account, thread, runs and approvals as everywhere else. */
 export function ZaprexApp() {
@@ -65,6 +68,7 @@ export function ZaprexApp() {
   const [canDictate, setCanDictate] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [replyTo, setReplyTo] = useState<ReplyTo>();
   const picker = useRef<HTMLInputElement>(null);
   const recognition = useRef<Recognition | undefined>(undefined);
   const thread = useRef<HTMLDivElement>(null);
@@ -190,17 +194,20 @@ export function ZaprexApp() {
     const prompt = text.trim().slice(0, MAX_PROMPT);
     const files = text === draft ? attachments : [];
     if ((!prompt && !files.length) || busy) return;
+    const quote = text === draft ? replyTo?.text : undefined;
     setDraft("");
     setAttachments([]);
+    setReplyTo(undefined);
     setBusy(true);
     setActionError("");
-    setLive({ user: prompt, reply: "", phase: "thinking", attachments: files });
+    setLive({ user: withQuote(prompt, quote), reply: "", phase: "thinking", attachments: files });
     void (async () => {
       let failed = "";
       const response = await talk(prompt, repoId || null, event => {
         if (event.type === "text") setLive(current => current && { ...current, reply: current.reply + event.text, phase: "talking" });
+        if (event.type === "search") setLive(current => current && { ...current, search: event.query });
         if (event.type === "error") failed = errorText({ status: 502, body: { error: event.code } });
-      }, undefined, payloadOf(files));
+      }, undefined, payloadOf(files), quote);
       if (response) failed = errorText(response);
       await refresh();
       setLive(undefined);
@@ -263,7 +270,7 @@ export function ZaprexApp() {
   const notice = modeNotice(state);
   const plan = planLabel(state.entitlement);
   const activeRun = state.runs.find(isActive);
-  const activity = live ? (live.phase === "thinking" ? "Thinking" : "Answering") : activityFor(activeRun, state.lastEvent);
+  const activity = live ? (live.phase === "thinking" ? (live.search ? `Searching the web: ${live.search}` : "Thinking") : "Answering") : activityFor(activeRun, state.lastEvent);
   const lastBot = [...state.messages].reverse().find(message => message.role === "bot" && message.kind !== "approval")?.id;
   const pending = state.approvals.filter(approval => approval.status === "pending");
   const locked = state.entitlement && !state.entitlement.enabled;
@@ -317,7 +324,7 @@ export function ZaprexApp() {
               </div>
             </div>
           )}
-          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
+          {state.messages.map(message => <ChatMessage key={message.id} message={message} onRun={busy || locked ? undefined : startRun} onReply={locked ? undefined : m => { setReplyTo({ role: m.role === "user" ? "user" : "bot", text: quotable(m.text) }); setTaskMode(false); }} avatar={message.id === lastBot && !live ? <LiveMascot id="app-avatar-last" pose="idle" testId="app-avatar" className="h-10 w-10" /> : undefined} />)}
           {live && (
             <>
               {live.attachments.length > 0 && (
@@ -333,7 +340,7 @@ export function ZaprexApp() {
                 <div className="max-w-[85%] rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm">
                   <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>
                   {live.reply
-                    ? <p className="whitespace-pre-wrap break-words">{withoutTaskLine(live.reply)}<span aria-hidden className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-gold align-middle" /></p>
+                    ? <div><Markdown text={withoutTaskLine(live.reply)} /><span aria-hidden className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-gold align-middle" /></div>
                     : <p className="flex items-center gap-1.5 text-muted" aria-label="Zaprex is thinking"><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold" /><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:.15s]" /><span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:.3s]" /></p>}
                 </div>
               </div>
@@ -364,6 +371,13 @@ export function ZaprexApp() {
             onDragOver={event => { if (event.dataTransfer.types.includes("Files") && !locked) { event.preventDefault(); setDragging(true); } }}
             onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }}
             onDrop={event => { event.preventDefault(); setDragging(false); void addFiles(Array.from(event.dataTransfer.files)); }}>
+            {replyTo && (
+              <div className="zx-chip mx-1.5 mb-1.5 mt-1 flex items-start gap-2 rounded-2xl border px-3 py-2 text-xs" data-testid="app-reply-chip">
+                <CornerUpLeft aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
+                <span className="min-w-0 flex-1"><span className="font-semibold">Replying to {replyTo.role === "bot" ? "Zaprex" : "yourself"}</span><span className="line-clamp-2 text-muted">{replyTo.text}</span></span>
+                <button type="button" onClick={() => setReplyTo(undefined)} aria-label="Cancel reply" title="Cancel reply" data-testid="app-reply-cancel" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-black/40 text-white hover:bg-black/60"><X aria-hidden className="h-3 w-3" /></button>
+              </div>
+            )}
             {attachments.length > 0 && (
               <ul className="flex flex-wrap gap-2 px-1.5 pb-1.5 pt-1" aria-label="Attachments" data-testid="app-attachments">
                 {attachments.map(item => (
@@ -453,7 +467,7 @@ export function ZaprexApp() {
   );
 }
 
-function ChatMessage({ message, onRun, avatar }: { message: Message; onRun?: (task: string) => void; avatar?: React.ReactNode }) {
+function ChatMessage({ message, onRun, onReply, avatar }: { message: Message; onRun?: (task: string) => void; onReply?: (message: Message) => void; avatar?: React.ReactNode }) {
   if (message.kind === "approval") {
     return <p className="flex items-center gap-2 text-xs text-muted"><ShieldAlert aria-hidden className="h-3.5 w-3.5 text-gold" /> {message.text}</p>;
   }
@@ -461,11 +475,12 @@ function ChatMessage({ message, onRun, avatar }: { message: Message; onRun?: (ta
   const pr = mine ? undefined : prLinkIn(message.text);
   const task = mine ? undefined : taskIn(message.text);
   return (
-    <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role}>
+    <div className={`group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`} data-role={message.role} data-testid="app-message">
       {!mine && (avatar ?? <span aria-hidden className="w-10 shrink-0" />)}
-      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "bg-blue text-white" : "border border-line bg-surface"}`}>
+      {mine && onReply && <ReplyButton onClick={() => onReply(message)} />}
+      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${mine ? "zx-mine bg-blue text-white" : "border border-line bg-surface"}`}>
         {!mine && <p className="mb-0.5 text-xs font-bold text-gold">Zaprex</p>}
-        <p className="whitespace-pre-wrap break-words">{task ? withoutTaskLine(message.text) : message.text}</p>
+        <Markdown text={task ? withoutTaskLine(message.text) : message.text} />
         {task && (
           <button type="button" disabled={!onRun} onClick={() => onRun?.(task)} data-testid="app-start-run" title={task}
             className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-xs font-semibold text-navy disabled:opacity-50">
@@ -474,7 +489,18 @@ function ChatMessage({ message, onRun, avatar }: { message: Message; onRun?: (ta
         )}
         {pr && <a href={pr} target="_blank" rel="noreferrer" data-testid="app-pr-link" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sky hover:underline"><GitPullRequestDraft aria-hidden className="h-3.5 w-3.5" /> Open draft PR</a>}
       </div>
+      {!mine && onReply && <ReplyButton onClick={() => onReply(message)} />}
     </div>
+  );
+}
+
+/** Hover (or focus) action on a message: reply with it quoted (IDEA-187). */
+function ReplyButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} title="Reply" aria-label="Reply to this message" data-testid="app-reply"
+      className="mb-1 inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-2 text-xs text-muted opacity-0 transition hover:text-gold focus-visible:opacity-100 group-hover:opacity-100">
+      <CornerUpLeft aria-hidden className="h-3.5 w-3.5" /> Reply
+    </button>
   );
 }
 
