@@ -2,7 +2,7 @@
 
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const TOKEN = /^[A-Za-z0-9._~-]{8,256}$/;
 
@@ -15,12 +15,13 @@ const TOKEN = /^[A-Za-z0-9._~-]{8,256}$/;
 export function DesktopHandoff() {
   const params = useSearchParams();
   const [opened, setOpened] = useState(false);
-  const link = useMemo(() => {
+  // Read once: the code is scrubbed from the address bar after the hand-off, which must not turn this into an error.
+  const [link] = useState(() => {
     const code = params.get("code") ?? "";
     const state = params.get("state") ?? "";
     if (!TOKEN.test(code) || !TOKEN.test(state)) return null;
     return `zaprex://auth/callback?${new URLSearchParams({ code, state }).toString()}`;
-  }, [params]);
+  });
 
   useEffect(() => {
     if (!link) return;
@@ -41,11 +42,11 @@ export function DesktopHandoff() {
         {!link
           ? "This link expired or was already used. Start sign-in again from the Zaprex app."
           : opened
-            ? "You’re signed in. You can close this tab and go back to the Zaprex app."
+            ? "Choose “Open Zaprex” if your browser asks. Then you can close this tab."
             : "Opening the Zaprex app…"}
       </p>
-      {link && !opened && (
-        <a href={link} className="btn-primary mt-6 inline-flex h-11 items-center rounded-full px-5 font-semibold text-white">Open Zaprex</a>
+      {link && (
+        <a href={link} className="btn-primary mt-6 inline-flex h-11 items-center rounded-full px-5 font-semibold text-white">{opened ? "Open Zaprex again" : "Open Zaprex"}</a>
       )}
     </div>
   );
