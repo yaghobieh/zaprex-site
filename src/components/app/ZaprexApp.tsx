@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveMascot } from "@/components/app/LiveMascot";
 import { Markdown } from "@/components/app/Markdown";
 import { startSignIn, type AccountUser } from "@/lib/auth";
+import { initNativeApp } from "@/lib/native";
 import {
   ACTIVE_POLL_MS, activityFor, botApi, errorText, eventLine, formatMinutes, IDLE_POLL_MS, isActive, MAX_PROMPT, mascotPose, modeNotice, planLabel, prLinkIn, quotable, STATUS_LABELS, talk, taskIn, withoutTaskLine, withQuote,
   type Approval, type Chat, type Decision, type Feedback, type Pose, type Entitlement, type Message, type Repo, type Run, type RunEvent, type Usage,
@@ -84,6 +85,8 @@ export function ZaprexApp() {
   const thread = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const poll = useRef<() => void>(() => undefined);
+
+  useEffect(() => { initNativeApp(); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -357,8 +360,8 @@ export function ZaprexApp() {
   const running = state.runs.filter(isActive).length;
 
   return (
-    <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-1 flex-col px-2 pb-4 pt-3 sm:px-4" data-testid="zaprex-app">
-      <section className="glass flex h-[calc(100dvh-5.5rem)] min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-3xl" aria-label="Chat with Zaprex">
+    <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-4xl flex-1 flex-col px-0 pt-0 pb-[env(safe-area-inset-bottom)] sm:px-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-3" data-testid="zaprex-app">
+      <section className="glass flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sm:rounded-3xl" aria-label="Chat with Zaprex">
         <div className="relative flex items-center gap-2 border-b border-line px-3 py-2.5 sm:px-4" ref={panelRef}>
           <button type="button" onClick={newChat} disabled={busy || !!locked} title="New chat" aria-label="New chat" data-testid="app-new-chat"
             className="zx-round grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:text-gold disabled:opacity-40">
@@ -452,7 +455,7 @@ export function ZaprexApp() {
           )}
         </div>
 
-        <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5" data-testid="app-thread" aria-live="polite">
+        <div ref={thread} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5 sm:py-5" data-testid="app-thread" aria-live="polite">
           {!state.loaded && <p className="text-sm text-muted">Loading…</p>}
           {state.loaded && state.error && !state.entitlement && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
           {state.loaded && locked && (
@@ -679,5 +682,5 @@ function shortDate(iso: string): string {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <div className="grid flex-1 place-items-center px-5 py-16">{children}</div>;
+  return <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-5 py-10">{children}</div>;
 }

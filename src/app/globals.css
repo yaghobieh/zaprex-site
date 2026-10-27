@@ -283,3 +283,7 @@ html[data-theme="dark"]:has(.zx-app-surface) { background: #0e0f12; }
 /* IDEA-189: chat search and runs popovers are solid (the light surface is translucent glass). */
 .zx-popover { background: #ffffff; backdrop-filter: blur(16px); }
 [data-theme="dark"] .zx-popover { background: #16181d; }
+
+/* IDEA-191: /app is a full-height app shell. Only the message list scrolls; no page scroll or rubber-banding. */
+html:has(.zx-app-shell), html:has(.zx-app-shell) body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+[data-native] body { -webkit-tap-highlight-color: transparent; }
