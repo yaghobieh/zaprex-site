@@ -55,6 +55,7 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
           <span><b className="text-ink">Zaprex</b> is part of <a href={INGOT.portal} className="font-semibold text-ink hover:text-sky">Ingot</a>.</span>
           <nav className="ml-auto flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer">
             <Link href="/" className="hover:text-ink">Home</Link>
+            <Link href="/about" className="hover:text-ink">About</Link>
             <a href={INGOT.pricing} className="hover:text-ink">Pricing</a>
             <a href={INGOT.support} className="hover:text-ink">Support</a>
             <a href={INGOT.privacy} className="hover:text-ink">Privacy</a>
