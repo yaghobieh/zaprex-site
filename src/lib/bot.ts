@@ -47,6 +47,8 @@ export const ERROR_TEXT: Record<string, string> = {
   account_blocked: "Your account is blocked.",
   unauthorized: "Your session ended. Sign in again.",
   offline: "Can't reach Zaprex. Check your connection.",
+  empty_reply: "Zaprex didn't answer that one. Try again.",
+  upstream_stream_failed: "Zaprex lost the connection to the model mid-answer. Try again.",
   generic: "Something went wrong. Try again.",
 };
 

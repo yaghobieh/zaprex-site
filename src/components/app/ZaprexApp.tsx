@@ -51,6 +51,8 @@ function Thumb({ src, alt, className, testId }: { src: string; alt: string; clas
 interface Live { user: string; reply: string; phase: "thinking" | "talking"; attachments: Attachment[]; search?: string }
 /** The message being replied to (IDEA-187). */
 interface ReplyTo { role: "user" | "bot"; text: string }
+/** A chat message that failed, so the error line can offer Retry (IDEA-188). */
+interface Failed { prompt: string; attachments: Attachment[]; quote?: string }
 
 /** zaprex.dev/app (IDEA-173): Zaprex as its own app. Same account, thread, runs and approvals as everywhere else. */
 export function ZaprexApp() {
@@ -69,6 +71,7 @@ export function ZaprexApp() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [dragging, setDragging] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyTo>();
+  const [failedTalk, setFailedTalk] = useState<Failed>();
   const picker = useRef<HTMLInputElement>(null);
   const recognition = useRef<Recognition | undefined>(undefined);
   const thread = useRef<HTMLDivElement>(null);
@@ -190,11 +193,12 @@ export function ZaprexApp() {
   }
 
   /** Chat (IDEA-177): Zaprex answers right away, streamed; a proposed task becomes a "Start run" button. */
-  function send(text = draft) {
-    const prompt = text.trim().slice(0, MAX_PROMPT);
-    const files = text === draft ? attachments : [];
+  function send(text = draft, retry?: Failed) {
+    const prompt = (retry?.prompt ?? text).trim().slice(0, MAX_PROMPT);
+    const files = retry ? retry.attachments : text === draft ? attachments : [];
     if ((!prompt && !files.length) || busy) return;
-    const quote = text === draft ? replyTo?.text : undefined;
+    const quote = retry ? retry.quote : text === draft ? replyTo?.text : undefined;
+    setFailedTalk(undefined);
     setDraft("");
     setAttachments([]);
     setReplyTo(undefined);
@@ -203,15 +207,22 @@ export function ZaprexApp() {
     setLive({ user: withQuote(prompt, quote), reply: "", phase: "thinking", attachments: files });
     void (async () => {
       let failed = "";
+      let answered = false;
+      let finished = false;
       const response = await talk(prompt, repoId || null, event => {
+        if (event.type === "text" && event.text.trim()) answered = true;
+        if (event.type === "done") finished = true;
         if (event.type === "text") setLive(current => current && { ...current, reply: current.reply + event.text, phase: "talking" });
         if (event.type === "search") setLive(current => current && { ...current, search: event.query });
         if (event.type === "error") failed = errorText({ status: 502, body: { error: event.code } });
       }, undefined, payloadOf(files), quote);
       if (response) failed = errorText(response);
+      // IDEA-188: a turn that ends without any answer is an error with Retry, never a silent drop.
+      if (!failed && (!answered || !finished)) failed = errorText({ status: 502, body: { error: answered ? "upstream_stream_failed" : "empty_reply" } });
       await refresh();
       setLive(undefined);
       setActionError(failed);
+      if (failed) setFailedTalk({ prompt, attachments: files, quote });
       setBusy(false);
     })();
   }
@@ -361,7 +372,17 @@ export function ZaprexApp() {
           </div>
         ))}
 
-        {actionError && <p role="alert" className="px-5 pb-2 text-sm text-red-400">{actionError}</p>}
+        {actionError && (
+          <div role="alert" className="flex items-center gap-3 px-5 pb-2 text-sm text-red-400" data-testid="app-error">
+            <span className="min-w-0 flex-1">{actionError}</span>
+            {failedTalk && (
+              <button type="button" disabled={busy} onClick={() => send("", failedTalk)} data-testid="app-retry"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-red-400/60 px-3 text-xs font-semibold text-red-400 hover:bg-red-400/10 disabled:opacity-50">
+                <RefreshCw aria-hidden className="h-3.5 w-3.5" /> Retry
+              </button>
+            )}
+          </div>
+        )}
         <div className="px-3 pb-3 pt-1 sm:px-4">
           <div className="flex h-7 items-center gap-2 px-2 text-sm" aria-live="polite" data-testid="app-status">
             <LiveMascot id="app-status" pose={live ? live.phase : pose} testId="app-status-mascot" className="h-7 w-7 shrink-0" />
