@@ -328,7 +328,7 @@ Zaprex is included in every paid Ingot plan. There is no separate Zaprex subscri
 | Ultra | $49 a month | 1,000 | 2 | 10 | 60 min |
 | Team | $12 per seat a month | 300 per seat | 1 | 3 | 30 min |
 
-Yearly plans include about two months free. See the [Ingot pricing page](https://ingot-portal.vercel.app/pricing).
+Plans are billed monthly and you can cancel any time. See the [Ingot pricing page](https://ingot-portal.vercel.app/pricing).
 
 ## What is limited
 
