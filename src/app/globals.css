@@ -223,3 +223,25 @@ details[open] .chev { transform: rotate(45deg); }
 .doc-link:hover { text-decoration-color: var(--sky); }
 .chip { background: color-mix(in srgb, var(--bg) 88%, transparent); }
 details > summary { cursor: pointer; }
+
+/* ---------- App surface (zaprex.dev/app, IDEA-181): soft black in dark mode, not navy. Marketing pages keep the space theme. ---------- */
+.zx-code { background: #0c1330; }
+html[data-theme="dark"]:has(.zx-app-surface) { background: #0e0f12; }
+[data-theme="dark"] .zx-app-surface {
+  --bg: #0e0f12;
+  --bg-soft: #16181d;
+  --surface: #16181d;
+  --border: #1e2127;
+  --muted: #a4a7af;
+  --glow: rgba(217, 160, 78, 0.22);
+  --space-top: #0e0f12;
+  --space-bottom: #0e0f12;
+  --nebula-blue: transparent;
+  --nebula-violet: transparent;
+  --nebula-gold: transparent;
+}
+[data-theme="dark"] .zx-app-surface .space-bg { background: #0e0f12; }
+[data-theme="dark"] .zx-app-surface .docs-nebula { display: none; }
+[data-theme="dark"] .zx-app-surface .glass { backdrop-filter: none; box-shadow: none; }
+[data-theme="dark"] .zx-app-surface .glass-bar { background: color-mix(in srgb, #0e0f12 88%, transparent); }
+[data-theme="dark"] .zx-app-surface .zx-code { background: #1e2127; }
