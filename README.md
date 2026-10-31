@@ -26,6 +26,8 @@ Try `/app` without an account: run `node scripts/mock-bot-server.mjs` and start 
 - `src/components/space/`: the space scroll engine (Lenis + GSAP ScrollTrigger): starfield canvas, the flying mascot with lightning trail, pinned scenes, device mockups and the demo reel. All motion is off under `prefers-reduced-motion`.
 - `src/components/mascot/`: the animated T-rex mascot (SVG + CSS states: idle, thinking, working, approval, done, error). Layer images live in `public/mascot/`.
 - `src/lib/docs.ts` and `src/app/docs/`: the /docs section (sidebar, search, light/dark).
+- `src/components/ask-rex/` and `src/lib/ask-rex.ts`: **Ask Rex**, the floating Zaprex assistant on the marketing pages and docs (not in `/app`). Built on `@forgedevstack/bear-x-ai`; it posts straight to ingot-server's `/api/site/ask` with `site: "zaprex"` (CORS, no cookies). `NEXT_PUBLIC_ASK_REX_API_URL` sets the server (default `https://ingot-server.fly.dev`; locally `http://localhost:3310`).
+- `src/app/site-knowledge.json/route.ts` and `src/lib/site-knowledge.ts`: what Rex answers from (every docs section, home page copy, FAQ and plans), prerendered and read by ingot-server.
 - `public/media/`: real product screenshots and the demo reel (mp4 + webm + poster), captured in Ingot test mode on a sample repository.
 - `src/app/icon.png`, `apple-icon.png`, `favicon.ico`, `opengraph-image.png`: icons and social card made from the mascot.
 
@@ -37,4 +39,4 @@ No secrets live in this repo. Put any future keys in Vercel environment variable
 
 ## End-to-end tests
 
-`npm run e2e` runs the Playwright suite in `e2e/` against https://zaprex.dev (set `ZAPREX_E2E_URL=http://localhost:3000` for a local build). The `/app` tests mock `/api/me` and `/api/bot/*` in the browser, so they never sign in, call a model or spend.
+`npm run e2e` runs the Playwright suite in `e2e/` against https://zaprex.dev (set `ZAPREX_E2E_URL=http://localhost:3000` for a local build). The `/app` tests mock `/api/me` and `/api/bot/*` in the browser, so they never sign in, call a model or spend. The Ask Rex tests mock `/api/site/ask` the same way.

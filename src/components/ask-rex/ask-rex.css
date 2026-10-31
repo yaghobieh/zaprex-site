@@ -1,0 +1,106 @@
+/* Ask Rex. Bear's FloatingChat renders on <body>; its variables are mapped onto zaprex.dev's tokens for light and dark. */
+.ask-rex {
+  --rex-window: #ffffff;
+  --rex-panel: #f3f6fd;
+  --rex-bubble: #e6ecf8;
+  --rex-input: #ffffff;
+  --rex-accent: var(--blue);
+  --rex-accent-hover: #2a55b8;
+  --bear-primary-50: rgba(59, 111, 217, 0.08);
+  --bear-primary-100: rgba(59, 111, 217, 0.14);
+  --bear-primary-200: rgba(59, 111, 217, 0.28);
+  --bear-primary-300: rgba(59, 111, 217, 0.4);
+  --bear-primary-400: var(--rex-accent-hover);
+  --bear-primary-500: var(--rex-accent);
+  --bear-primary-600: var(--rex-accent-hover);
+  --bear-primary-700: var(--rex-accent-hover);
+  --bear-ring-color: rgba(59, 111, 217, 0.45);
+  --bear-text-primary: var(--text);
+  --bear-text-secondary: var(--muted);
+  --bear-text-muted: var(--muted);
+  --bear-text-inverted: #ffffff;
+  --bear-bg-primary: var(--rex-window);
+  --bear-bg-secondary: var(--rex-bubble);
+  --bear-bg-tertiary: var(--rex-panel);
+  --bear-border-default: var(--border);
+  --bear-border: var(--border);
+  --bear-border-subtle: var(--border);
+  --bear-z-overlay: 70;
+  color: var(--text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+[data-theme="dark"] .ask-rex {
+  --rex-window: #0c1330;
+  --rex-panel: #101a3d;
+  --rex-bubble: #16224d;
+  --rex-input: #0a1028;
+  --rex-accent-hover: #5b8bf0;
+}
+
+/* Bear sizes the chat for its own header (fixed px height); a flex column lets the chat take whatever our header leaves. */
+.ask-rex .Bear-FloatingChat__window {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 32px));
+  height: min(560px, calc(100dvh - 120px));
+  border-radius: 1.25rem;
+  box-shadow: 0 30px 80px -30px rgba(5, 8, 22, 0.6), 0 0 0 1px rgba(59, 111, 217, 0.12);
+}
+.ask-rex .Bear-FloatingChat__header { flex: none; display: block; padding: 0; background: var(--rex-panel); color: var(--text); border-bottom: 1px solid var(--border); }
+.ask-rex .Bear-FloatingChat__chat { flex: 1 1 auto; min-height: 0; height: auto; border: none; border-radius: 0; background: var(--rex-window); }
+.ask-rex .Bear-Chat__composer { background: var(--rex-panel); }
+.ask-rex .Bear-Chat__composer textarea, .ask-rex .Bear-Chat__composer input { background: var(--rex-input); color: var(--text); font-size: 16px; }
+.ask-rex .Bear-Chat__composer textarea::placeholder { color: var(--muted); }
+.ask-rex .Bear-FloatingChat__powered { flex: none; color: var(--muted); background: var(--rex-panel); font-size: 11px; line-height: 15px; }
+
+.ask-rex-header { display: flex; align-items: center; gap: 10px; min-height: 60px; padding-block: 8px; padding-inline: 12px 10px; }
+.ask-rex-mark { flex: none; width: 40px; height: 40px; margin-block: -4px; }
+.ask-rex-heading { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.ask-rex-title-row { display: flex; align-items: center; gap: 8px; }
+.ask-rex-title { font-family: var(--font-display-face), var(--font-inter), sans-serif; font-size: 16px; font-weight: 800; line-height: 20px; letter-spacing: -0.01em; color: var(--text); }
+.ask-rex-beta { border-radius: 999px; padding: 1px 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #1b2647; background: var(--gold); }
+.ask-rex-subtitle { font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ask-rex .Bear-CloseButton { border: none; background: transparent; }
+.ask-rex-header .ask-rex-close { flex: none; color: var(--muted); }
+.ask-rex-header .ask-rex-close:hover { color: var(--text); background: var(--rex-bubble); }
+
+/* Trigger: Rex and "Ask Rex" in a pill; a round close button while open. */
+.ask-rex-trigger {
+  display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 18px 0 8px; border-radius: 999px; cursor: pointer;
+  font-weight: 700; font-size: 15px; color: #ffffff; background: linear-gradient(135deg, var(--blue), #2a55b8);
+  box-shadow: 0 12px 30px -8px rgba(59, 111, 217, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ask-rex-trigger:hover { transform: translateY(-1px); box-shadow: 0 16px 40px -8px rgba(59, 111, 217, 0.9), 0 0 0 1px rgba(143, 177, 255, 0.4); }
+.ask-rex-trigger:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.ask-rex-trigger[data-open="true"] { width: 52px; padding: 0; justify-content: center; }
+.ask-rex-trigger-mark { width: 40px; height: 40px; margin-block: -6px; }
+.ask-rex-trigger-x { width: 22px; height: 22px; }
+.ask-rex .Bear-FloatingChat__window { bottom: calc(52px + 12px); }
+
+/* Bear always shows bubble times (FloatingChat has no showTimestamps); the widget doesn't. */
+.ask-rex .Bear-ChatBubble__meta { display: none; }
+.ask-rex .Bear-ChatBubble__body { max-width: 88%; }
+.ask-rex .Bear-ChatBubble__bubble { font-size: 14px; line-height: 1.55; }
+.ask-rex-answer { display: flex; flex-direction: column; gap: 8px; }
+.ask-rex-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ask-rex-docs { align-self: flex-start; color: var(--sky); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.ask-rex-docs:hover { color: var(--text); }
+.ask-rex-sources { display: flex; flex-direction: column; gap: 4px; }
+.ask-rex-sources-label { font-size: 12px; color: var(--muted); }
+.ask-rex .Bear-CitationList { gap: 4px; }
+.ask-rex .Bear-CitationList__item { padding: 4px 8px; background: var(--rex-window); border-color: var(--border); font-size: 13px; overflow-wrap: anywhere; }
+.ask-rex .Bear-CitationList__item a { color: var(--sky); }
+
+/* Phones: the chat fills the width above the trigger, sized to the visible viewport (keyboard included). */
+@media (max-width: 639px) {
+  .ask-rex { --Bear-FloatingChat-side: 12px !important; --Bear-FloatingChat-bottom: calc(12px + env(safe-area-inset-bottom)) !important; }
+  .ask-rex .Bear-FloatingChat__window { position: fixed; left: 8px; right: 8px; width: auto; bottom: calc(76px + env(safe-area-inset-bottom)); height: min(600px, calc(100dvh - 96px - env(safe-area-inset-bottom))); border-radius: 1rem; }
+  .ask-rex-trigger { height: 48px; padding-inline-end: 14px; font-size: 14px; }
+  .ask-rex-trigger[data-open="true"] { width: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-rex-trigger { transition: none; }
+  .ask-rex-trigger:hover { transform: none; }
+}

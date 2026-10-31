@@ -17,6 +17,7 @@ export function BackToIngot() {
       let refHost = "";
       try { refHost = document.referrer ? new URL(document.referrer).hostname : ""; } catch {}
       if (from === "ingot" || INGOT_HOSTS.includes(refHost)) sessionStorage.setItem(KEY, "1");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage is only readable after hydration
       setShow(sessionStorage.getItem(KEY) === "1");
     } catch {}
   }, []);
