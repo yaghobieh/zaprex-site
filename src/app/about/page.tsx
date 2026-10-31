@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AccountButton } from "@/components/AccountButton";
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
+import { MobileNav } from "@/components/nav/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CREATOR, INGOT, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -44,13 +45,16 @@ export default function AboutPage() {
             <ZaprexMascot id="about-nav" className="-my-1 h-10 w-10" decorative />
             <span className="font-display text-xl font-extrabold tracking-tight">Zaprex</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm font-semibold text-muted" aria-label="About">
+          <nav className="flex items-center gap-4 text-sm font-semibold text-muted mobile:hidden" aria-label="About">
             <span className="text-ink" aria-current="page">About</span>
             <Link href="/docs" className="hover:text-ink">Docs</Link>
           </nav>
           <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle />
-            <AccountButton />
+            <div className="flex items-center gap-3 mobile:hidden">
+              <ThemeToggle />
+              <AccountButton />
+            </div>
+            <MobileNav />
           </div>
         </div>
       </header>

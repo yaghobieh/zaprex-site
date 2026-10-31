@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AccountButton } from "@/components/AccountButton";
 import { ZaprexApp } from "@/components/app/ZaprexApp";
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
+import { MobileNav } from "@/components/nav/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
@@ -24,13 +25,16 @@ export default function AppPage() {
             <ZaprexMascot id="app-nav" className="-my-1 h-10 w-10" decorative />
             <span className="font-display hidden text-xl font-extrabold tracking-tight sm:inline">Zaprex</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm font-semibold text-muted" aria-label="App">
+          <nav className="flex items-center gap-4 text-sm font-semibold text-muted mobile:hidden" aria-label="App">
             <span className="text-ink" aria-current="page">App</span>
             <Link href="/docs" className="hover:text-ink">Docs</Link>
           </nav>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <AccountButton />
+            <div className="flex items-center gap-2 mobile:hidden sm:gap-3">
+              <ThemeToggle />
+              <AccountButton />
+            </div>
+            <MobileNav />
           </div>
         </div>
       </header>
