@@ -9,6 +9,7 @@ export const INGOT = {
   portal: "https://ingot-portal.vercel.app",
   download: "https://ingot-portal.vercel.app/download",
   pricing: "https://ingot-portal.vercel.app/pricing",
+  marketplace: "https://www.ingotide.com/marketplace?kind=zaprex",
   terms: "https://ingot-portal.vercel.app/legal/terms",
   privacy: "https://ingot-portal.vercel.app/legal/privacy",
   support: "https://ingot-portal.vercel.app/support",
