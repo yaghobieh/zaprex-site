@@ -4,6 +4,7 @@ import { Activity, ArrowUp, Check, Copy, CornerUpLeft, FileText, GitPullRequestD
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AccountButton } from "@/components/AccountButton";
 import { LiveMascot } from "@/components/app/LiveMascot";
+import { MobileNav } from "@/components/nav/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Markdown } from "@/components/app/Markdown";
 import { startSignIn, type AccountUser } from "@/lib/auth";
@@ -429,6 +430,7 @@ export function ZaprexApp() {
             <div className="flex shrink-0 items-center gap-1 sm:hidden" data-testid="app-bar-account">
               <ThemeToggle compact />
               <AccountButton />
+              <MobileNav id="app-mobile-nav" />
             </div>
           )}
 

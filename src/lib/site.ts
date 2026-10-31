@@ -6,6 +6,7 @@ export const DESCRIPTION =
   "Zaprex is the background AI coding bot from Ingot. Give it a task or a nightly routine; it works in an isolated cloud machine, asks before risky steps, and hands you a draft pull request.";
 
 export const INGOT = {
+  site: "https://www.ingotide.com",
   portal: "https://ingot-portal.vercel.app",
   download: "https://ingot-portal.vercel.app/download",
   pricing: "https://ingot-portal.vercel.app/pricing",

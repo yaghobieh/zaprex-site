@@ -2,6 +2,9 @@
 
 /* Theme: dark (deep space) by default; data-theme on <html> is set before first paint (see layout). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* Phones and small tablets (<= 768px) get the hamburger menu; wider screens keep the header links. */
+@custom-variant mobile (@media (max-width: 768px));
+@custom-variant desktop (@media (min-width: 769px));
 
 :root {
   --navy: #1b2647;
@@ -303,3 +306,30 @@ html:has(.zx-app-shell), html:has(.zx-app-shell) body { height: 100%; overflow: 
 html:has(.zx-app-shell) { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .zx-md { overflow-wrap: anywhere; }
 .zx-bubble pre, .zx-bubble table { max-width: 100%; }
+
+/* ---------- Mobile menu and docs drawer ---------- */
+html[data-scroll-locked], html[data-scroll-locked] body { overflow: hidden; overscroll-behavior: none; }
+.zx-drawer { position: fixed; inset: 0; z-index: 100; }
+.zx-drawer-backdrop { position: absolute; inset: 0; background: rgba(5, 8, 22, 0.55); backdrop-filter: blur(2px); animation: zx-fade 0.2s ease-out; }
+.zx-drawer-panel {
+  position: absolute; inset-block: 0; display: flex; flex-direction: column;
+  width: min(22rem, 88vw); height: 100dvh;
+  background: var(--bg); color: var(--text); box-shadow: 0 0 60px rgba(5, 8, 22, 0.45);
+  animation: zx-slide-from-right 0.22s ease-out;
+}
+.zx-drawer[data-side="end"] .zx-drawer-panel { inset-inline-end: 0; border-inline-start: 1px solid var(--border); }
+.zx-drawer[data-side="start"] .zx-drawer-panel { inset-inline-start: 0; border-inline-end: 1px solid var(--border); animation-name: zx-slide-from-left; }
+[dir="rtl"] .zx-drawer[data-side="end"] .zx-drawer-panel { animation-name: zx-slide-from-left; }
+[dir="rtl"] .zx-drawer[data-side="start"] .zx-drawer-panel { animation-name: zx-slide-from-right; }
+.zx-drawer-panel nav[aria-label="Docs"] a { display: flex; align-items: center; min-height: 44px; }
+@keyframes zx-fade { from { opacity: 0; } }
+@keyframes zx-slide-from-right { from { transform: translateX(100%); } }
+@keyframes zx-slide-from-left { from { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .zx-drawer-backdrop, .zx-drawer-panel { animation: none; } }
+
+/* Mobile fit: code blocks and tables scroll inside themselves, long words wrap (preflight already caps img/video). */
+@layer base {
+  pre { max-width: 100%; overflow-x: auto; }
+  table { max-width: 100%; }
+}
+.doc-body { overflow-wrap: anywhere; }

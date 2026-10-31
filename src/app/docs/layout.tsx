@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AccountButton } from "@/components/AccountButton";
+import { DocsDrawer } from "@/components/docs/DocsDrawer";
 import { DocsNav } from "@/components/docs/DocsNav";
 import { DocsSearch } from "@/components/docs/DocsSearch";
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
+import { MobileNav } from "@/components/nav/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DOC_GROUPS, DOCS, headings, plainText } from "@/lib/docs";
 import { INGOT } from "@/lib/site";
@@ -30,18 +32,18 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
           <span className="hidden text-sm font-semibold text-muted sm:inline">Docs</span>
           <div className="mx-auto hidden w-full max-w-md md:block"><DocsSearch index={INDEX} /></div>
           <div className="ml-auto flex items-center gap-3 md:ml-0">
-            <ThemeToggle />
-            <AccountButton />
+            <div className="flex items-center gap-3 mobile:hidden">
+              <ThemeToggle />
+              <AccountButton />
+            </div>
             <Link href="/app" className="hidden h-9 items-center rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 lg:inline-flex">Open app</Link>
+            <MobileNav />
           </div>
         </div>
       </header>
       <div className="mx-auto max-w-7xl px-5">
-        <div className="py-4 md:hidden"><DocsSearch index={INDEX} /></div>
-        <details className="glass mb-4 rounded-2xl px-4 py-3 lg:hidden">
-          <summary className="text-sm font-semibold">Docs menu</summary>
-          <div className="mt-3"><DocsNav items={NAV_ITEMS} groups={DOC_GROUPS} /></div>
-        </details>
+        <div className="pt-4 md:hidden"><DocsSearch index={INDEX} /></div>
+        <div className="py-4 lg:hidden"><DocsDrawer items={NAV_ITEMS} groups={DOC_GROUPS} /></div>
         <div className="flex gap-10">
           <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 overflow-y-auto py-8 lg:block">
             <DocsNav items={NAV_ITEMS} groups={DOC_GROUPS} />

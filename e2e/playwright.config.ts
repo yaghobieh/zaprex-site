@@ -18,7 +18,10 @@ export default defineConfig({
   outputDir: "../test-results/e2e",
   use: { baseURL: BASE_URL, trace: "retain-on-failure", screenshot: "only-on-failure", launchOptions: executablePath ? { executablePath, args: ["--no-sandbox"] } : undefined },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
-    { name: "mobile", use: { ...devices["Pixel 7"], defaultBrowserType: "chromium" }, grep: /@mobile/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, grepInvert: /@mobile-nav/ },
+    { name: "mobile", use: { ...devices["Pixel 7"], defaultBrowserType: "chromium" }, grep: /@mobile(?!-)/ },
+    // Phone menu and mobile fit (e2e/mobile-nav.spec.ts) on a real iPhone (WebKit) and an Android phone (Chromium).
+    { name: "iphone-13", use: { ...devices["iPhone 13"] }, grep: /@mobile-nav/ },
+    { name: "pixel-7", use: { ...devices["Pixel 7"] }, grep: /@mobile-nav/ },
   ],
 });

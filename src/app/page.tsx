@@ -4,6 +4,7 @@ import { AccountButton } from "@/components/AccountButton";
 import { Icon } from "@/components/Icon";
 import { DemoReel } from "@/components/space/DemoReel";
 import { Flier } from "@/components/space/Flier";
+import { MobileNav } from "@/components/nav/MobileNav";
 import { Screen } from "@/components/space/Screen";
 import { ZaprexMascot } from "@/components/mascot/ZaprexMascot";
 import { ScrollScenes } from "@/components/space/ScrollScenes";
@@ -39,6 +40,8 @@ const STOP_SHOTS = [
   { src: "/media/routines.webp", width: 1100, height: 219, kind: "browser", alt: "Real Zaprex routines tab: an active nightly test-and-fix routine with its next run time" },
   { src: "/media/task.webp", width: 999, height: 454, kind: "browser", alt: "Real Zaprex chat in the Ingot dashboard: you ask it to fix failing tests and it reports back when the run finishes" },
 ] as const;
+
+const HOME_SECTIONS = [...NAV, { href: "#early-access", label: "Early access" }];
 
 /** Planet looks, cycled across features and "what it does" stops. */
 const PLANETS = ["planet-blue", "planet-gold", "planet-navy", "planet-ice"] as const;
@@ -102,9 +105,12 @@ export default function Home() {
             <Link href="/docs" className="transition hover:text-ink" data-testid="nav-docs">Docs</Link>            <a href={INGOT.marketplace} className="transition hover:text-ink" data-testid="nav-marketplace">Templates store</a>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap xl:ml-0">
-            <ThemeToggle />
-            <AccountButton />
-            <a href="#early-access" className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 md:inline-flex">Early access</a>
+            <div className="flex items-center gap-3 mobile:hidden">
+              <ThemeToggle />
+              <AccountButton />
+            </div>
+            <a href="#early-access" className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-gold px-4 text-sm font-semibold text-navy transition hover:brightness-105 desktop:inline-flex">Early access</a>
+            <MobileNav sections={HOME_SECTIONS} className="xl:hidden" />
           </div>
         </div>
       </header>

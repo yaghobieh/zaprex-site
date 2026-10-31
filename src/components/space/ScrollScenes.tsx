@@ -3,6 +3,7 @@
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import { useEffect } from "react";
+import { SCROLL_LOCK_EVENT } from "@/lib/scroll-lock";
 import { ScrollTrigger, gsap, prefersReducedMotion } from "./gsap";
 
 const MOTION = "(prefers-reduced-motion: no-preference)";
@@ -19,6 +20,8 @@ export function ScrollScenes() {
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
+    const onScrollLock = (event: Event) => ((event as CustomEvent<boolean>).detail ? lenis.stop() : lenis.start());
+    window.addEventListener(SCROLL_LOCK_EVENT, onScrollLock);
 
     const mm = gsap.matchMedia();
 
@@ -98,6 +101,7 @@ export function ScrollScenes() {
 
     return () => {
       window.removeEventListener("load", refresh);
+      window.removeEventListener(SCROLL_LOCK_EVENT, onScrollLock);
       mm.revert();
       gsap.ticker.remove(tick);
       lenis.destroy();
