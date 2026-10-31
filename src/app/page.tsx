@@ -99,7 +99,7 @@ export default function Home() {
           </a>
           <nav className="hidden flex-1 items-center justify-center gap-5 whitespace-nowrap text-sm font-medium text-muted xl:flex" aria-label="Sections">
             {NAV.map(item => <a key={item.href} href={item.href} className="transition hover:text-ink">{item.label}</a>)}
-            <Link href="/docs" className="transition hover:text-ink" data-testid="nav-docs">Docs</Link>
+            <Link href="/docs" className="transition hover:text-ink" data-testid="nav-docs">Docs</Link>            <a href={INGOT.marketplace} className="transition hover:text-ink" data-testid="nav-marketplace">Templates store</a>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap xl:ml-0">
             <ThemeToggle />
@@ -374,7 +374,7 @@ export default function Home() {
           </div>
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 md:ml-auto" aria-label="Footer">
             <Link href="/docs" className="hover:text-ink">Docs</Link>
-            <Link href="/app" className="hover:text-ink">App</Link>
+            <Link href="/app" className="hover:text-ink">App</Link>            <a href={INGOT.marketplace} className="hover:text-ink">Templates store</a>
             <a href={INGOT.download} className="hover:text-ink">Download Ingot</a>
             <a href={INGOT.pricing} className="hover:text-ink">Pricing</a>
             <a href={INGOT.github} className="hover:text-ink" rel="noopener noreferrer">GitHub</a>
