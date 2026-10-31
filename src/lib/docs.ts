@@ -30,8 +30,9 @@ You give Zaprex a task in the [Zaprex app](/docs/zaprex-app) (or a routine start
 
 - **The Zaprex app** at [zaprex.dev/app](/app): chat, runs, run log and approval cards. Zaprex is its own app, separate from the Ingot IDE.
 - **From the Ingot IDE**: the small Zaprex T-rex next to the agent opens the Zaprex app in your browser. The IDE has no Zaprex panel of its own.
-- **Your Zaprex dashboard**: GitHub, routines, memory and notifications, on the Ingot portal.
-- **zaprex.dev**: product site and docs. Sign in with your Ingot account.
+- **Your [Zaprex dashboard](/docs/zaprex-dashboard)**: GitHub, routines, memory and notifications, on the Ingot portal.
+- **On your desktop and phone**: see [Desktop and mobile apps](/docs/desktop-and-mobile).
+- **zaprex.dev**: product site and docs. Sign in with your Ingot account. Questions? [Ask Rex](/docs/ask-rex), the assistant on this site.
 
 > Zaprex is in beta. Some features below are marked as coming later; everything else is live.
 `,
@@ -42,7 +43,7 @@ You give Zaprex a task in the [Zaprex app](/docs/zaprex-app) (or a routine start
     title: "The Zaprex app",
     description: "Zaprex is its own app at zaprex.dev/app. Ingot links to it from a small T-rex next to the agent.",
     body: `
-Zaprex is a **separate app** from the Ingot IDE. You use it in the browser at [zaprex.dev/app](/app), on your desktop or your phone.
+Zaprex is a **separate app** from the Ingot IDE. You use it in the browser at [zaprex.dev/app](/app), on your desktop or your phone (see [Desktop and mobile apps](/docs/desktop-and-mobile)).
 
 ## Zaprex and Ingot
 
@@ -57,17 +58,53 @@ Open [zaprex.dev/app](/app) and choose **Sign in with Ingot**. You sign in on th
 
 ## What's in the app
 
-- **Chat**: tell Zaprex what to do. Pick a repository first if you connected GitHub; each repository has its own conversation.
+- **Chat**: ask questions or tell Zaprex what to do, with [files and images](/docs/attachments) and [web search](/docs/web-search). Pick a repository first if you connected GitHub; each repository has its own conversation. See [Chat with Zaprex](/docs/chat) and [Chats and search](/docs/chats).
 - **Approval cards**: risky steps wait here for **Approve**, **Approve for this run** or **Reject**. See [Approvals and safety](/docs/approvals-and-safety).
 - **Runs**: every run with its status and minutes. Click one to read its [run log](/docs/run-log), use the stop button to cancel, or open its draft PR.
 - **Usage**: your Zaprex minutes this month and how many runs are going.
 - The T-rex at the top shows what Zaprex is doing: thinking, working, waiting for you, done or stopped.
 
-GitHub, routines, memory and notifications are in your **Zaprex dashboard** (linked from the app).
+GitHub, routines, [memory](/docs/memory) and [notifications](/docs/notifications) are in your [Zaprex dashboard](/docs/zaprex-dashboard) (linked from the app).
 
 ## Light, dark or system
 
 Use the theme switch at the top of the page. Your choice is remembered on this device.
+`,
+  },
+  {
+    slug: "desktop-and-mobile",
+    group: "Get started",
+    title: "Desktop and mobile apps",
+    description: "Zaprex in its own window on your Mac and on your phone: the same app, account and chats everywhere.",
+    body: `
+Zaprex is one app at [zaprex.dev/app](/app). The desktop and mobile apps are small native shells around it, so your chats, runs, approvals and usage are the same wherever you open it.
+
+## In the browser
+
+Open [zaprex.dev/app](/app) on any computer or phone and sign in with your Ingot account. On a phone it fits the screen: one compact bar, an edge-to-edge chat, and the input stays right above the keyboard.
+
+## Desktop app
+
+- Its own window with a soft black title bar, the T-rex in your Dock, a sign-in that stays, and one window at a time.
+- Builds exist today for **macOS on Apple silicon**. A public download is coming; Windows and Linux builds come later.
+- **Sign in**: choose **Sign in with Ingot**. Sign-in opens in your default browser (Google and GitHub don't allow signing in inside app windows). When it finishes, the browser hands you back to the app, signed in.
+- Only zaprex.dev opens inside the window. Links to the Ingot portal, GitHub and everything else open in your browser.
+- \`zaprex://\` links open the app and bring it to the front.
+
+## iPhone and Android
+
+- Zaprex for iOS and Android is built and on its way to the App Store and Google Play. Until then, use [zaprex.dev/app](/app) in your phone's browser.
+- Sign-in works like the desktop app: it opens in the system browser sheet, then returns to the app.
+- Edge to edge with the notch and home indicator respected. Links to zaprex.dev/app open in the app; everything else opens in the browser. Without a connection you see an offline screen.
+- Push notifications come later. Until then you get [in-app and email notifications](/docs/notifications).
+
+## Updates
+
+Windows that stay open for days (a pinned tab, the desktop or phone app) notice when a new version of Zaprex is out. An idle window reloads itself when you come back to it. If you have a half-written message, you see a **Reload** button instead, so nothing you typed is lost.
+
+## From the Ingot IDE
+
+The small Zaprex T-rex next to the agent opens [zaprex.dev/app](/app) in your browser. See [The Zaprex app](/docs/zaprex-app).
 `,
   },
   {
@@ -106,6 +143,143 @@ Type something specific, for example \`Fix the failing tests in sum.mjs\`. Zapre
 If the task needs a risky step (adding a dependency, for example) you get an approval card. When the run finishes you get a notification with a link to the **draft pull request**. Keep it, ask for changes, or close it.
 
 > Next: set up a [routine](/docs/routines) so this happens every night.
+`,
+  },
+  {
+    slug: "chat",
+    group: "Using Zaprex",
+    title: "Chat with Zaprex",
+    description: "Ask questions, plan work and start runs from one chat. Replies stream in, and a proposed change becomes a Start run button.",
+    body: `
+The chat in the [Zaprex app](/app) is where you talk to Zaprex. It answers right away, like a senior teammate, and it can turn the conversation into a background [run](/docs/tasks) that ends in a draft pull request.
+
+## Chat or task
+
+- **Chat** (the default): ask about your code, a bug, an error message or a plan. Zaprex replies in the thread as it writes, with Markdown and code blocks. Chatting never changes your repository.
+- **Task mode**: press **Task** next to the input to send your message as a background task instead. The input changes to "Describe the task: Zaprex opens a draft PR…". Zaprex starts a run in a fresh sandbox and opens a draft PR. Press **Task** again to go back to chat.
+
+## Start run
+
+When you ask for a change in chat, Zaprex says in a line or two what it would do and shows a **Start run** button. Nothing runs until you press it. Zaprex never claims in chat that it changed code or opened a pull request: only runs do that.
+
+## Pick a repository first
+
+Choose a repository in the **Repository** menu. Chat and runs use it, and each repository has its own main thread. With **No repository (scratch)**, runs use a scratch workspace and the changes stay in the [run log](/docs/run-log).
+
+## Message actions
+
+Hover a message to see its actions. On phones they stay under the bubble.
+
+- **Reply**: quote that message in your next one, so Zaprex knows exactly what you mean. Remove the quote with the × on the chip.
+- **Copy**: copy the message text.
+- **Good answer** and **Bad answer**: thumbs up or down on Zaprex's replies. A thumbs-down can carry a short reason ("What went wrong?"). Press the same thumb again to clear it. Your feedback is saved with the message.
+
+## Dictate
+
+Where your browser supports speech recognition, a **mic** button next to the input dictates into it. Check the text, then send.
+
+## If a reply doesn't arrive
+
+The thread shows what went wrong with a **Retry** button. A message is never dropped silently.
+
+## Also in the chat
+
+- [Files and images](/docs/attachments): attach code, logs and screenshots.
+- [Web search](/docs/web-search): fresh facts, with sources.
+- [Chats and search](/docs/chats): one chat per topic, and find old ones.
+`,
+  },
+  {
+    slug: "chats",
+    group: "Using Zaprex",
+    title: "Chats and search",
+    description: "Start a new chat for each topic, find old ones by title or text, and get back to the main thread.",
+    body: `
+## New chat
+
+Press **New chat** at the top of the chat to start an empty one. Zaprex names it after your first message, so the list stays readable.
+
+## Search chats
+
+Open **Search chats** and type: it matches chat titles and the text of every message. Pick a result to open that chat. With an empty search you see your recent chats.
+
+## The main thread
+
+Each repository also has its **main thread**, the conversation from before chats existed. It is never lost: open **Search chats** and pick **Main thread**.
+
+## Runs from any chat
+
+Runs started from any chat, or by a [routine](/docs/routines), all appear in **Runs**. The indicator at the top shows how many are going; open one for its status, minutes, [run log](/docs/run-log) and draft PR.
+
+## Same chats everywhere
+
+Chats live on your Ingot account, so the browser, the [desktop and mobile apps](/docs/desktop-and-mobile) and your [Zaprex dashboard](/docs/zaprex-dashboard) show the same conversations.
+
+> Deleting a chat from the app is coming later.
+`,
+  },
+  {
+    slug: "attachments",
+    group: "Using Zaprex",
+    title: "Files and images",
+    description: "Attach code, logs and screenshots to a chat message so Zaprex sees exactly what you see.",
+    body: `
+## How to attach
+
+- Press **+** next to the input and pick files or images.
+- Drag files onto the input.
+- Paste an image, for example a screenshot.
+
+Each attachment shows as a chip under the input. Remove one with its × before you send.
+
+## What you can attach
+
+- Up to **4** attachments per message.
+- **Text and code**: plain text, Markdown, JSON, CSV, logs, diffs and patches, and source files such as \`.ts\`, \`.tsx\`, \`.js\`, \`.py\`, \`.go\`, \`.rs\`, \`.java\`, \`.rb\`, \`.sql\`, \`.sh\`, \`.yml\` and \`.toml\`, up to 100 KB each.
+- **Images**: PNG, JPEG, WebP or GIF. Large photos are scaled down (at most 1,600 px on the long side) before they are sent.
+- All attachments of one message together stay under about 3.5 MB.
+
+## Chat only
+
+Attachments go with chat messages. **Task mode** is off while files are attached: remove them to start a task. A run works from your repository, not from attachments.
+
+## What is kept
+
+Zaprex reads the files and images to answer that message. The thread keeps your message and the file names only, not the file contents or image data.
+
+## If an attachment is refused
+
+- **Type not supported**: attach text or code files, or PNG, JPEG, WebP or GIF images.
+- **More than 4 files**: send the rest in a second message.
+- **One attachment is too large**: trim the file or send only the part that matters.
+- **Too large together**: remove one and try again.
+`,
+  },
+  {
+    slug: "web-search",
+    group: "Using Zaprex",
+    title: "Web search",
+    description: "For fresh or specific facts, Zaprex searches the web first and cites its sources.",
+    body: `
+## When Zaprex searches
+
+In chat, Zaprex searches when a question needs fresh or specific facts: news, releases and versions, prices, dates, or a library, product or project it doesn't know for sure. It searches before asking you a clarifying question, and only about your latest message.
+
+## What it searches
+
+News and web results, Wikipedia for background, and for questions about code also npm and GitHub. A project name you mention may be your own: Zaprex looks for it together with your name on npm and GitHub before guessing a famous project with a similar name.
+
+## Sources
+
+An answer built from search cites its sources inline as [1], [2], and lists them under the reply. Zaprex never invents a source.
+
+## Limits
+
+One search per message, and up to 5 searches a minute and 30 a day per account. Over a limit, Zaprex answers without a new search.
+
+## Runs are different
+
+Search is part of chat. Runs work in an isolated sandbox with a network allowlist; see [Security and privacy](/docs/security-and-privacy).
 `,
   },
   {
@@ -287,6 +461,104 @@ Until GitHub is connected, the portal shows **Test mode**: runs use a scratch wo
 `,
   },
   {
+    slug: "memory",
+    group: "Using Zaprex",
+    title: "Memory",
+    description: "What Zaprex remembers about you and each project, and how to view, edit or forget it.",
+    body: `
+Zaprex remembers how you and your projects work, so you don't have to repeat yourself in every task.
+
+## What it remembers
+
+- **About you**: preferences, for example "Prefer small pull requests" or your PR style.
+- **About each project**: build and test commands, conventions, flaky tests.
+
+## How facts get there
+
+- **You add them**: type a fact in the **Memory** tab of your [Zaprex dashboard](/docs/zaprex-dashboard) and choose **Remember**.
+- **Zaprex learns them**: after a successful run, it saves low-risk facts about the project it learned on the way (for example the test command), once.
+
+## How it's used
+
+Every run on a project starts with your facts and that project's facts, so Zaprex follows your conventions without being told again.
+
+## You're in control
+
+Everything in the **Memory** tab is visible and marked **You** or **Project**.
+
+- Edit a fact, or **Forget** it.
+- **Forget this project**: remove everything Zaprex knows about one repository in one step.
+- Forget everything.
+
+## No secrets in memory
+
+Every fact goes through the secret scanner before it is saved. A fact that looks like a credential is refused with "Memory contains a secret": remove the key and save again.
+`,
+  },
+  {
+    slug: "notifications",
+    group: "Using Zaprex",
+    title: "Notifications",
+    description: "In-app and email alerts when a run finishes or fails, needs your approval, a routine pauses, or your minutes run low.",
+    body: `
+Zaprex tells you when something needs you or is ready, so you don't have to watch it work.
+
+## What you hear about
+
+- **Run finished**: a run succeeded ("Draft PR ready: …"). In the app only, by default.
+- **Run failed**: a run failed or timed out.
+- **Approval needed**: a risky step waits for you.
+- **Routine paused**: a routine paused itself after 3 failures in a row.
+- **Budget**: you used 80 % and then 100 % of this month's Zaprex minutes.
+
+Everything except **Run finished** also sends an email by default.
+
+## In the app
+
+Every notification lands in the **Notifications** tab of your [Zaprex dashboard](/docs/zaprex-dashboard), with an unread count. A notification about a run links to it.
+
+## By email
+
+Emails go to your Ingot account address, with a subject that starts with "Zaprex:" and a link to the run.
+
+## Nothing secret
+
+Titles and text go through the secret scanner first, so tokens never end up in a notification or an email.
+
+## Coming later
+
+- A settings screen to choose which events also send an email.
+- Push notifications in the [mobile apps](/docs/desktop-and-mobile), and Slack and Telegram.
+`,
+  },
+  {
+    slug: "zaprex-dashboard",
+    group: "Using Zaprex",
+    title: "Your Zaprex dashboard",
+    description: "GitHub, runs, routines, memory and notifications on the Ingot portal, next to your account and plan.",
+    body: `
+Your Zaprex dashboard is on the Ingot portal at [Dashboard › Zaprex](https://ingot-portal.vercel.app/dashboard/bot). The [Zaprex app](/app) links to it. It uses the same account, so everything you do here shows in the app and the other way round.
+
+## GitHub and repositories
+
+- **Connect GitHub** so Zaprex can open draft pull requests, then **Add repository** for each one Zaprex may use.
+- Turn a repository off for Zaprex, or **Disconnect** GitHub.
+- Until GitHub is connected, runs use a scratch workspace. See [Draft PRs and GitHub](/docs/draft-prs-and-github).
+
+## Tabs
+
+- **Chat**: the same conversations as the app.
+- **Runs**: every run with its status, minutes, draft PR and [run log](/docs/run-log).
+- **Routines**: add a nightly test-and-fix, run one now, pause, resume or delete. See [Routines](/docs/routines).
+- **Memory**: everything Zaprex remembers, to edit or forget. See [Memory](/docs/memory).
+- **Notifications**: everything Zaprex told you, with an unread count. See [Notifications](/docs/notifications).
+
+## Usage
+
+Your Zaprex minutes this month against your plan, and how many runs are going. On Free and BYOK you see an upgrade prompt instead. See [Plans and limits](/docs/plans-and-limits).
+`,
+  },
+  {
     slug: "models",
     group: "Models and plans",
     title: "Models",
@@ -377,7 +649,11 @@ A secret scanner runs on run events, logs, memory, PR text and notifications **b
 
 ## Memory you control
 
-Zaprex remembers your preferences (for example your PR style) and facts about each project (build and test commands, conventions, flaky tests). Everything is **visible, editable and deletable** in the Memory tab, and you can **forget a project** in one step. Zaprex refuses to save anything that looks like a credential.
+Zaprex remembers your preferences (for example your PR style) and facts about each project (build and test commands, conventions, flaky tests). Everything is **visible, editable and deletable** in the Memory tab, and you can **forget a project** in one step. Zaprex refuses to save anything that looks like a credential. See [Memory](/docs/memory).
+
+## Chat attachments
+
+[Files and images](/docs/attachments) you attach are read to answer that message. The thread keeps your message and the file names only.
 
 ## Untrusted input
 
@@ -426,6 +702,43 @@ Every run with its **redacted** run log and approval history. Admins can cancel 
 ## Kill switch
 
 One switch, with a confirmation step, that **pauses Zaprex everywhere**: it cancels every unfinished run, blocks new runs and makes the scheduler skip routines until it is turned off.
+`,
+  },
+  {
+    slug: "ask-rex",
+    group: "Help",
+    title: "Ask Rex",
+    description: "The assistant on zaprex.dev: quick answers about Zaprex and Ingot from these docs, with links to the pages it used.",
+    body: `
+**Ask Rex** is the T-rex button at the bottom right of the zaprex.dev home page and docs. Ask a question in plain words and Rex answers from these docs and the Ingot site, with links to the pages it used. No account needed.
+
+## What Rex answers
+
+- **Zaprex first**: what it is, the app, chat and tasks, routines, approvals, draft PRs, models, plans and limits, security, admin controls and troubleshooting.
+- **Ingot too**: the IDE, its plans and pricing, the portal and your account. Ingot sources open on the Ingot site and are marked "· Ingot".
+- **Follow-ups** such as "and on Team?" build on your previous question.
+
+## What Rex doesn't do
+
+- General questions, poems, jokes, homework, or coding help that isn't about Zaprex or Ingot. Rex says it can only answer about Zaprex and Ingot and links to the docs.
+- Your account, repositories or runs: Rex can't see them and can't start a run. For that, use the [Zaprex app](/app), where you [chat with Zaprex](/docs/chat) itself.
+- Guess prices: if Rex can't confirm a price on the site, it says so and links to [Plans and limits](/docs/plans-and-limits).
+
+## Answers can be wrong
+
+Rex answers only from zaprex.dev and the Ingot site, and can still get things wrong. Check the linked pages before you rely on an answer.
+
+## Limits
+
+10 questions a minute and 50 a day per visitor, shared with Ask Ingot on the Ingot site. If Rex takes a break, everything it knows is in these docs.
+
+## Privacy
+
+Your question is used only to write the answer. The server doesn't store question text; it keeps a hashed visitor ID to count questions for the limits.
+
+## Where you find it
+
+On the home page and every docs page, in light and dark, on phones too. Not in the Zaprex app, where Zaprex itself answers.
 `,
   },
   {
