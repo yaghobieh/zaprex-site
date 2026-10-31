@@ -385,6 +385,9 @@ export default function Home() {
             <a href={INGOT.pricing} className="hover:text-ink">Pricing</a>
             <a href={INGOT.github} className="hover:text-ink" rel="noopener noreferrer">GitHub</a>
             <a href={INGOT.support} className="hover:text-ink">Support</a>
+            <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink">Terms</Link>
+            <Link href="/account/delete" className="hover:text-ink">Delete account</Link>
             <a href={INGOT.terms} className="hover:text-ink">Terms</a>
             <Link href="/about" className="hover:text-ink">About</Link>
             <a href={INGOT.privacy} className="hover:text-ink">Privacy</a>

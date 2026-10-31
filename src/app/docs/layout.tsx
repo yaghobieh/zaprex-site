@@ -60,7 +60,8 @@ export default function DocsLayout({ children }: LayoutProps<"/docs">) {
             <Link href="/about" className="hover:text-ink">About</Link>
             <a href={INGOT.marketplace} className="hover:text-ink">Templates store</a>            <a href={INGOT.pricing} className="hover:text-ink">Pricing</a>
             <a href={INGOT.support} className="hover:text-ink">Support</a>
-            <a href={INGOT.privacy} className="hover:text-ink">Privacy</a>
+            <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink">Terms</Link>
           </nav>
         </div>
       </footer>
