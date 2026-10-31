@@ -76,4 +76,5 @@ test("/site-knowledge.json publishes the docs, FAQ and plans with site-relative 
   expect(body.version).toMatch(/^[0-9a-f]{12}$/);
   expect(body.chunks.every(chunk => chunk.url.startsWith("/") && !chunk.url.startsWith("//"))).toBe(true);
   expect(body.chunks.find(chunk => chunk.id === "pricing/zaprex-plans")?.text).toContain("$6 a month");
+  expect(body.chunks.some(chunk => chunk.url.startsWith("/docs/ask-rex"))).toBe(true);
 });

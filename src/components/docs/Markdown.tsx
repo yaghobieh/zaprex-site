@@ -25,7 +25,12 @@ function inline(text: string, key: string): ReactNode[] {
   return out;
 }
 
-/** A deliberately small Markdown subset for the docs: headings, paragraphs, lists, quotes, code blocks. */
+/** "| a | b |" → ["a", "b"]. */
+function tableCells(row: string): string[] {
+  return row.trim().replace(/^\||\|$/g, "").split("|").map(cell => cell.trim());
+}
+
+/** A deliberately small Markdown subset for the docs: headings, paragraphs, lists, quotes, tables, code blocks. */
 export function Markdown({ source }: { source: string }) {
   const lines = source.trim().split("\n");
   const blocks: ReactNode[] = [];
@@ -62,6 +67,21 @@ export function Markdown({ source }: { source: string }) {
       blocks.push(<div key={key} className="doc-note">{inline(quote.join(" "), key)}</div>);
       continue;
     }
+    if (line.startsWith("|")) {
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].startsWith("|")) rows.push(tableCells(lines[(i += 1) - 1]));
+      const [head, ...rest] = rows;
+      const body = rest.filter(row => !row.every(cell => /^:?-+:?$/.test(cell)));
+      blocks.push(
+        <div key={key} className="doc-table-wrap">
+          <table className="doc-table">
+            <thead><tr>{head.map((cell, n) => <th key={n} scope="col">{inline(cell, `${key}-h${n}`)}</th>)}</tr></thead>
+            <tbody>{body.map((row, r) => <tr key={r}>{row.map((cell, n) => <td key={n}>{inline(cell, `${key}-${r}-${n}`)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
     if (/^(- |\d+\. )/.test(line)) {
       const ordered = /^\d+\. /.test(line);
       const items: string[] = [];
@@ -71,7 +91,7 @@ export function Markdown({ source }: { source: string }) {
       continue;
     }
     const para: string[] = [];
-    while (i < lines.length && lines[i].trim() && !/^(#|> |- |\d+\. |```)/.test(lines[i])) para.push(lines[(i += 1) - 1]);
+    while (i < lines.length && lines[i].trim() && !/^(#|> |- |\d+\. |```|\|)/.test(lines[i])) para.push(lines[(i += 1) - 1]);
     blocks.push(<p key={key} className="doc-p">{inline(para.join(" "), key)}</p>);
   }
   return <>{blocks}</>;
